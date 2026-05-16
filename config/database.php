@@ -4,10 +4,10 @@
  * Koneksi PDO ke MySQL
  */
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'beanpay');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com');
+define('DB_NAME', 'test');
+define('DB_USER', '43uhMQutEhJs8gk.root');
+define('DB_PASS', 'GBGgBhm6ipnSrmsz');
 define('DB_CHARSET', 'utf8mb4');
 
 // Base URL (Dynamic)
@@ -27,6 +27,7 @@ try {
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES   => false,
+        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
     ];
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
 } catch (PDOException $e) {
