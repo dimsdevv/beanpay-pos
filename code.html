@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VibePOS - Manajemen Resep</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "primary": "#004ac6",
+                "on-error-container": "#93000a",
+                "tertiary-fixed-dim": "#d0bcff",
+                "outline-variant": "#c3c6d7",
+                "on-secondary": "#ffffff",
+                "error": "#ba1a1a",
+                "on-secondary-container": "#00714d",
+                "on-surface": "#0b1c30",
+                "primary-fixed-dim": "#b4c5ff",
+                "surface-dim": "#cbdbf5",
+                "on-secondary-fixed-variant": "#005236",
+                "on-tertiary-container": "#f6edff",
+                "on-background": "#0b1c30",
+                "on-secondary-fixed": "#002113",
+                "on-primary": "#ffffff",
+                "surface-tint": "#0053db",
+                "inverse-surface": "#213145",
+                "secondary": "#006c49",
+                "on-primary-fixed": "#00174b",
+                "surface-container-high": "#dce9ff",
+                "surface-container-low": "#eff4ff",
+                "inverse-primary": "#b4c5ff",
+                "secondary-container": "#6cf8bb",
+                "primary-fixed": "#dbe1ff",
+                "background": "#f8f9ff",
+                "on-tertiary-fixed-variant": "#5516be",
+                "on-primary-container": "#eeefff",
+                "on-error": "#ffffff",
+                "inverse-on-surface": "#eaf1ff",
+                "surface": "#f8f9ff",
+                "tertiary": "#632ecd",
+                "tertiary-fixed": "#e9ddff",
+                "error-container": "#ffdad6",
+                "surface-bright": "#f8f9ff",
+                "on-primary-fixed-variant": "#003ea8",
+                "secondary-fixed": "#6ffbbe",
+                "tertiary-container": "#7d4ce7",
+                "primary-container": "#2563eb",
+                "outline": "#737686",
+                "on-surface-variant": "#434655",
+                "secondary-fixed-dim": "#4edea3",
+                "surface-container-lowest": "#ffffff",
+                "surface-container-highest": "#d3e4fe",
+                "on-tertiary": "#ffffff",
+                "surface-variant": "#d3e4fe",
+                "surface-container": "#e5eeff",
+                "on-tertiary-fixed": "#23005c"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "xs": "4px",
+                "margin-desktop": "32px",
+                "base": "8px",
+                "sm": "12px",
+                "xl": "64px",
+                "margin-mobile": "16px",
+                "gutter": "24px",
+                "lg": "40px",
+                "md": "24px"
+        },
+        "fontFamily": {
+                "body-md": [
+                        "Plus Jakarta Sans"
+                ],
+                "body-lg": [
+                        "Plus Jakarta Sans"
+                ],
+                "label-md": [
+                        "Plus Jakarta Sans"
+                ],
+                "headline-sm": [
+                        "Plus Jakarta Sans"
+                ],
+                "headline-lg": [
+                        "Plus Jakarta Sans"
+                ],
+                "headline-lg-mobile": [
+                        "Plus Jakarta Sans"
+                ],
+                "display-lg": [
+                        "Plus Jakarta Sans"
+                ],
+                "label-sm": [
+                        "Plus Jakarta Sans"
+                ],
+                "headline-md": [
+                        "Plus Jakarta Sans"
+                ]
+        },
+        "fontSize": {
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "1.6",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "1.6",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-md": [
+                        "14px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-sm": [
+                        "20px",
+                        {
+                                "lineHeight": "1.4",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "1.25",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "28px",
+                        {
+                                "lineHeight": "1.2",
+                                "fontWeight": "700"
+                        }
+                ],
+                "display-lg": [
+                        "48px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "800"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "1.2",
+                                "fontWeight": "500"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "1.3",
+                                "fontWeight": "700"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1;
+    }
+</style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen overflow-hidden flex">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 z-50 bg-surface-container-low dark:bg-surface-container-lowest shadow-lg flex flex-col p-md gap-base">
+<!-- Header -->
+<div class="mb-lg flex flex-col gap-xs">
+<h1 class="text-headline-sm font-headline-sm font-black text-primary dark:text-primary-fixed-dim">VibePOS</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Terminal #01</p>
+</div>
+<!-- Nav Links -->
+<nav class="flex-1 flex flex-col gap-xs">
+<a class="flex items-center gap-sm px-sm py-2 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 transition-all rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-sm px-sm py-2 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 transition-all rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">point_of_sale</span>
+                Point of Sale
+            </a>
+<a class="flex items-center gap-sm px-sm py-2 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 transition-all rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">table_restaurant</span>
+                Tables
+            </a>
+<!-- Active Tab: Kitchen (Mapping to Recipe Management intent) -->
+<a class="flex items-center gap-sm px-sm py-2 bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-lg font-bold font-label-md text-label-md scale-98 duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined fill">countertops</span>
+                Kitchen
+            </a>
+<a class="flex items-center gap-sm px-sm py-2 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 transition-all rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+                Inventory
+            </a>
+<a class="flex items-center gap-sm px-sm py-2 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 transition-all rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+                Reports
+            </a>
+<a class="flex items-center gap-sm px-sm py-2 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 transition-all rounded-lg font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">group</span>
+                Customers
+            </a>
+</nav>
+<!-- CTA -->
+<button class="mt-auto w-full py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md shadow-sm hover:opacity-90 transition-opacity flex justify-center items-center gap-2">
+<span class="material-symbols-outlined">add_circle</span>
+            New Order
+        </button>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col p-margin-desktop h-screen overflow-hidden">
+<!-- Header Section -->
+<header class="flex justify-between items-center shrink-0 mb-gutter">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">Manajemen Resep</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Kelola standar bahan dan HPP untuk menu restoran.</p>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant">search</span>
+<input class="pl-10 pr-4 py-2 w-64 rounded-lg border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary outline-none font-body-md text-body-md transition-shadow" placeholder="Cari resep..." type="text"/>
+</div>
+<button class="px-6 py-2.5 bg-primary text-on-primary rounded-lg font-label-md text-label-md shadow-sm hover:bg-primary-fixed-variant transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">add</span>
+                    Tambah Resep Baru
+                </button>
+</div>
+</header>
+<!-- Content Grid -->
+<div class="flex flex-1 gap-gutter overflow-hidden">
+<!-- Recipe List (Left Column) -->
+<section class="flex-1 overflow-y-auto pr-2 pb-lg flex flex-col gap-sm">
+<!-- Active Recipe Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md border-2 border-primary shadow-[0_4px_20px_rgba(0,0,0,0.05)] cursor-pointer relative overflow-hidden group">
+<div class="absolute inset-y-0 left-0 w-1 bg-primary"></div>
+<div class="flex items-center gap-md">
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-surface-container-high">
+<img alt="" class="w-full h-full object-cover" data-alt="A top-down view of a beautifully crafted artisan latte in a wide ceramic cup. The rich brown espresso contrasts with perfectly steamed white milk, forming a delicate fern latte art pattern. The cup sits on a pristine white cafe table in bright, natural morning light, conveying a fresh, modern, and premium coffee house aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoqLXr9prZ7W4LoLVVQ7xaZj3ANNNVmchxYAJ0YDE8d2AqPVGo2avsi5immpWC6SefhAZ1QqJNJmaw1Q7URfTuN7wnkZlzgdDQz1aE4wOW0kobMDeA7TGr84K2Y0D67MFud-g0Ox85zRsJAXQqqWFPzUc783cYwBZQKi4ZWMyAJbi66jfv565moBEfFY6GoHahMgP8X3paJdAbhbBbKTiURZQGvqiwJUV27VTsuMUU47uo4ksXz8R113GeCgJYMkfpQ36mhVKXkQs"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Artisan Latte</h3>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary font-label-sm text-label-sm">Coffee</span>
+<span class="flex items-center gap-1 text-secondary font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Active
+                                        </span>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-md text-label-md text-on-surface-variant">HPP</p>
+<p class="font-headline-sm text-headline-sm text-primary">Rp 8.500</p>
+</div>
+</div>
+<div class="flex justify-between items-center mt-3 pt-3 border-t border-outline-variant/20">
+<p class="font-label-sm text-label-sm text-outline">Last updated: 12 Oct 2023</p>
+<span class="material-symbols-outlined text-primary">arrow_forward_ios</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Inactive Recipe Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 hover:shadow-md transition-shadow cursor-pointer">
+<div class="flex items-center gap-md">
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-surface-container-high">
+<img alt="" class="w-full h-full object-cover" data-alt="A thick, juicy beef burger stacked high on a wooden serving board. It features a perfectly seared patty, melting yellow cheese, crisp green lettuce, and red tomato slices inside a glossy brioche bun. The lighting is warm and directional, emphasizing the fresh ingredients and appetizing textures in a modern casual dining setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCe7OlwqZmtX-Ru08V-ZtEGR0plO3A4Hft7R5CSWrHEO-z_O3fuIVGjIB79khA5ovCL1MfJ9xRzBaunNuRjH3JnsEnOeTUOoNRZztEVHJDXIY1rCsel24sq4UjcSs0g3KEMXtMnWiDLBKw9WqydE_pjK4CMD3QbTQYLuJ4eJEHjqhmyIBhCkTCCWoUAJ_kw_w9Vd2twB_WFv49_UEod6dbBC6yKsJM06fpT7UPIdRgPlgB2PsqqKOMkjfI8V_YC-Wtz9FaBFaEKcCw"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Classic Beef Burger</h3>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm">Food</span>
+<span class="flex items-center gap-1 text-secondary font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Active
+                                        </span>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-md text-label-md text-on-surface-variant">HPP</p>
+<p class="font-headline-sm text-headline-sm text-on-surface">Rp 22.400</p>
+</div>
+</div>
+<div class="flex justify-between items-center mt-3 pt-3 border-t border-outline-variant/20">
+<p class="font-label-sm text-label-sm text-outline">Last updated: 05 Oct 2023</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Draft Recipe Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 hover:shadow-md transition-shadow cursor-pointer opacity-75">
+<div class="flex items-center gap-md">
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-outline-variant text-3xl">image</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Seasonal Truffle Pasta</h3>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm">Food</span>
+<span class="flex items-center gap-1 text-outline font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span> Draft
+                                        </span>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-md text-label-md text-on-surface-variant">HPP Est.</p>
+<p class="font-headline-sm text-headline-sm text-on-surface">Rp 45.000</p>
+</div>
+</div>
+<div class="flex justify-between items-center mt-3 pt-3 border-t border-outline-variant/20">
+<p class="font-label-sm text-label-sm text-outline">Last updated: 18 Oct 2023</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Detail Panel (Right Column) -->
+<aside class="w-[480px] shrink-0 bg-surface-container-lowest rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] border border-outline-variant/20 overflow-y-auto flex flex-col">
+<!-- Hero Image -->
+<div class="h-48 w-full relative">
+<img alt="" class="w-full h-full object-cover" data-alt="A close-up, high-resolution shot of an artisan latte in a pale ceramic cup resting on a sleek marble counter. The rich, velvety texture of the microfoam creates a symmetrical tulip latte art design. The background is softly blurred out, emphasizing the high-quality coffee and creating a sophisticated, bright, and inviting modern cafe atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDF3AuW7leWAWte_jJ2wlsSlGIlFlb5eFOHTobSzrhxl08PX9P-RttYbw2uP9j5QjfSGJfXV8CUYIGmJYvN0YKL-dAGdwQ8sf4Zivrl5vOXxJH59c4SvSfBuIICUoB9UGJH9Zt3lhzjZsuNhGM_lv05N-qMVEiUCSup9xoui0KhkHE1orV8qj_WSqhYzNeA_wtQvPQZ4YXx9W2vZsHYvKHgeIXzRmP8skWqqazFMl0P7whSJA960WdVTe6FFNV21fVh2HwRPio3wrw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+<div>
+<span class="px-2 py-1 rounded-md bg-white/20 backdrop-blur-md text-white font-label-sm text-label-sm mb-2 inline-block">Coffee</span>
+<h2 class="font-headline-lg text-headline-lg text-white drop-shadow-md">Artisan Latte</h2>
+</div>
+<button class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center hover:bg-white/40 transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+<div class="p-md flex flex-col gap-gutter">
+<!-- Financial Summary Bento Grid -->
+<div class="grid grid-cols-2 gap-sm">
+<div class="bg-surface-container-low p-4 rounded-lg">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Total Food Cost (HPP)</p>
+<p class="font-headline-md text-headline-md text-primary">Rp 8.500</p>
+</div>
+<div class="bg-surface-container-low p-4 rounded-lg">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Suggested Selling Price</p>
+<p class="font-headline-md text-headline-md text-on-surface">Rp 35.000</p>
+</div>
+<div class="col-span-2 bg-secondary-container/20 border border-secondary-container p-3 rounded-lg flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">Gross Margin</span>
+<span class="font-headline-sm text-headline-sm text-secondary">75.7%</span>
+</div>
+</div>
+<!-- Ingredients Section -->
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-outline">kitchen</span> Ingredients
+                        </h4>
+<div class="border border-outline-variant/30 rounded-lg overflow-hidden">
+<!-- Table Header -->
+<div class="grid grid-cols-12 gap-2 p-3 bg-surface-container-low border-b border-outline-variant/30 font-label-sm text-label-sm text-on-surface-variant">
+<div class="col-span-6">Item</div>
+<div class="col-span-3 text-right">Qty</div>
+<div class="col-span-3 text-right">Cost</div>
+</div>
+<!-- Rows -->
+<div class="grid grid-cols-12 gap-2 p-3 border-b border-outline-variant/10 font-body-sm text-body-sm items-center">
+<div class="col-span-6 font-medium">House Blend Beans</div>
+<div class="col-span-3 text-right text-on-surface-variant">18 g</div>
+<div class="col-span-3 text-right">Rp 4.500</div>
+</div>
+<div class="grid grid-cols-12 gap-2 p-3 border-b border-outline-variant/10 font-body-sm text-body-sm items-center">
+<div class="col-span-6 font-medium">Fresh Milk (Dairy)</div>
+<div class="col-span-3 text-right text-on-surface-variant">180 ml</div>
+<div class="col-span-3 text-right">Rp 3.600</div>
+</div>
+<div class="grid grid-cols-12 gap-2 p-3 font-body-sm text-body-sm items-center">
+<div class="col-span-6 font-medium">Sugar Syrup (Optional)</div>
+<div class="col-span-3 text-right text-on-surface-variant">10 ml</div>
+<div class="col-span-3 text-right">Rp 400</div>
+</div>
+</div>
+</div>
+<!-- Preparation Steps -->
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-outline">menu_book</span> Preparation Steps
+                        </h4>
+<ol class="space-y-4">
+<li class="flex gap-3">
+<span class="flex-shrink-0 w-6 h-6 rounded-full bg-primary-container text-primary flex items-center justify-center font-label-sm text-label-sm">1</span>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Grind 18g of House Blend beans finely. Tamp evenly into the portafilter.</p>
+</li>
+<li class="flex gap-3">
+<span class="flex-shrink-0 w-6 h-6 rounded-full bg-primary-container text-primary flex items-center justify-center font-label-sm text-label-sm">2</span>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Extract a double shot of espresso (approx 36g) into the serving cup.</p>
+</li>
+<li class="flex gap-3">
+<span class="flex-shrink-0 w-6 h-6 rounded-full bg-primary-container text-primary flex items-center justify-center font-label-sm text-label-sm">3</span>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Steam 180ml of fresh milk until microfoam forms and temperature reaches 60-65°C.</p>
+</li>
+<li class="flex gap-3">
+<span class="flex-shrink-0 w-6 h-6 rounded-full bg-primary-container text-primary flex items-center justify-center font-label-sm text-label-sm">4</span>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Pour steamed milk over the espresso, finishing with a classic tulip latte art.</p>
+</li>
+</ol>
+</div>
+</div>
+</aside>
+</div>
+</main>
+</body></html>

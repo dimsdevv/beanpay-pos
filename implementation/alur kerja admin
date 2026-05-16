@@ -1,0 +1,163 @@
+# Real-Time Dashboard & Smart Notification System
+
+Sistem yang membuat dashboard admin terasa *hidup* — angka pendapatan update otomatis tanpa reload, dan setiap pembayaran baru langsung muncul notifikasi visual.
+
+## Arsitektur yang Diusulkan
+
+```mermaid
+sequenceDiagram
+    participant K as 💳 Kasir
+    participant DB as 🗄️ Database
+    participant API as 📡 API Endpoint
+    participant D as 📊 Dashboard Admin
+
+    K->>DB: INSERT pembayaran (bayar pesanan)
+    loop Setiap 15 detik
+        D->>API: GET /api/realtime.php?last_id=X
+        API->>DB: Query KPI + new payments since ID
+        DB-->>API: Data JSON
+        API-->>D: {kpi, notifications, last_id}
+        D->>D: Update KPI cards + Show toast
+    end
+```
+
+### Kenapa Polling, Bukan WebSocket?
+
+| Aspek | Polling (15s) | WebSocket |
+|-------|---------------|-----------|
+| Kompleksitas | Rendah (PHP murni) | Tinggi (perlu Ratchet/Swoole) |
+| Kompatibilitas | XAMPP langsung support | Butuh config khusus |
+| Beban server | Minimal (1 query ringan/15s) | Persistent connection |
+| Latensi | Max 15 detik | Instan |
+
+> [!TIP]
+> Untuk POS system, delay 15 detik **sangat acceptable** — admin tidak perlu melihat pembayaran dalam milidetik. Yang penting *konsisten* dan *reliable*.
+
+## Proposed Changes
+
+### 1. API Endpoint (Backend)
+
+#### [NEW] [realtime.php](file:///c:/xampp/htdocs/BeanPay/api/realtime.php)
+
+Endpoint JSON yang mengembalikan:
+- **KPI hari ini**: total revenue, total orders, average ticket
+- **Notifikasi baru**: pembayaran yang belum "dilihat" (berdasarkan `last_id`)
+- **Trend perbandingan**: vs. kemarin (untuk pill +/-%)
+
+```
+GET /api/realtime.php?last_id=5
+Response:
+{
+  "kpi": {
+    "revenue": 850000,
+    "orders": 12,
+    "avg_ticket": 70833
+  },
+  "trend": {
+    "revenue_pct": 15.5,
+    "orders_pct": 20,
+    "avg_pct": -3.2
+  },
+  "notifications": [
+    {
+      "id": 6,
+      "nomor_pesanan": "ORD-20260512-004",
+      "total": 85000,
+      "metode": "QRIS",
+      "kasir": "Siti",
+      "waktu": "03:45"
+    }
+  ],
+  "last_id": 6
+}
+```
+
+Logika cerdas:
+- Hanya query pembayaran dengan `id > last_id` → **minimal database load**
+- KPI dihitung ulang setiap call (query ringan karena pakai `CURDATE()` index)
+- Response di-cache oleh browser jika tidak ada perubahan (304 Not Modified)
+
+---
+
+### 2. Dashboard Frontend — Live Update
+
+#### [MODIFY] [dashboard.php](file:///c:/xampp/htdocs/BeanPay/modules/admin/dashboard.php)
+
+Perubahan:
+- Tambahkan `id` attribute ke elemen KPI agar bisa di-update via JS
+- Tambahkan Alpine.js component `liveDashboard()` yang polling setiap 15 detik
+- Animasi **count-up** saat angka berubah (smooth transition, bukan lompat)
+- **Pulse indicator** hijau di header menandakan "Live" status
+
+---
+
+### 3. Notification Center (Global)
+
+#### [MODIFY] [sidebar.php](file:///c:/xampp/htdocs/BeanPay/includes/sidebar.php)
+
+Perubahan di topbar:
+- **Bell badge** → menampilkan jumlah notifikasi baru (angka merah)
+- **Dropdown panel** saat bell diklik → daftar pembayaran terbaru
+- Setiap item notifikasi menampilkan: nomor pesanan, total, metode bayar, waktu
+- Tombol "Tandai Semua Dibaca" untuk clear badge
+
+#### Toast Notifications (Auto-popup)
+- Menggunakan **SweetAlert2 Toast** (pojok kanan atas)
+- Muncul otomatis saat ada pembayaran baru
+- Format: `💰 Pembayaran Baru! ORD-xxx • Rp 85.000 (QRIS)`
+- Auto-dismiss setelah 5 detik
+- Sound notification opsional (gentle "ding")
+
+---
+
+### 4. Activity Feed Widget
+
+#### [MODIFY] [dashboard.php](file:///c:/xampp/htdocs/BeanPay/modules/admin/dashboard.php)
+
+Widget baru di bawah chart area:
+- **"Live Activity"** — feed pembayaran terbaru hari ini
+- Tampil otomatis saat ada transaksi baru (tanpa reload)
+- Setiap entry: waktu, nomor pesanan, kasir, metode, jumlah
+- Max 5 entry terbaru, dengan animasi slide-in
+
+---
+
+## Alur Sistem
+
+```mermaid
+flowchart TD
+    A["🛒 Kasir: Proses Bayar"] --> B["💾 Insert ke tabel pembayaran"]
+    B --> C["✅ Redirect ke struk"]
+    
+    D["📊 Dashboard Admin"] --> E["⏱️ Polling setiap 15 detik"]
+    E --> F["📡 GET /api/realtime.php?last_id=X"]
+    F --> G{"Ada pembayaran baru?"}
+    G -- Ya --> H["🔔 Toast notification muncul"]
+    G -- Ya --> I["📈 KPI cards update animasi"]
+    G -- Ya --> J["📋 Activity feed update"]
+    G -- Ya --> K["🔴 Badge bell bertambah"]
+    G -- Tidak --> L["💤 Tunggu 15 detik lagi"]
+```
+
+## File yang Diubah
+
+| File | Aksi | Deskripsi |
+|------|------|-----------|
+| `api/realtime.php` | **NEW** | API endpoint JSON untuk live data |
+| `modules/admin/dashboard.php` | MODIFY | Alpine.js polling + animasi KPI |
+| `includes/sidebar.php` | MODIFY | Notification bell dropdown + toast |
+
+> [!IMPORTANT]
+> **Tidak perlu migrasi database** — sistem ini memanfaatkan kolom `pembayaran.id` (auto-increment) dan `waktu_bayar` yang sudah ada untuk deteksi perubahan. Efisien dan zero-migration.
+
+## Verification Plan
+
+### Automated Tests
+1. Hit `api/realtime.php?last_id=0` → pastikan response JSON valid dengan semua field
+2. Buat pembayaran baru di kasir → hit API lagi → pastikan muncul di `notifications[]`
+3. Buka dashboard → tunggu 15 detik → pastikan KPI terupdate
+
+### Manual Verification
+1. Buka 2 tab: dashboard admin + kasir
+2. Di kasir, proses pembayaran
+3. Di dashboard, observe: toast muncul, angka KPI berubah smooth, bell badge naik
