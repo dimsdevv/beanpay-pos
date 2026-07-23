@@ -10,7 +10,17 @@
     "scope": "/",
     "id": "/",
     "categories": ["business", "finance", "productivity"],
+    "display_override": ["window-controls-overlay", "standalone"],
+    "prefer_related_applications": false,
+    "related_applications": [],
+    "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
     "icons": [
+        {
+            "src": "assets/images/logo-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
         {
             "src": "assets/images/logo.jpeg",
             "sizes": "1254x1254",
