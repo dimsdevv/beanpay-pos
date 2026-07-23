@@ -10,11 +10,17 @@
 // define('DB_USER', 'dimsdevv');
 
 // === DATABASE CONFIG ===
-define('DB_HOST', getenv('BEANPAY_DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('BEANPAY_DB_NAME') ?: 'beanpay');
-define('DB_USER', getenv('BEANPAY_DB_USER') ?: 'root');
-define('DB_PASS', getenv('BEANPAY_DB_PASS') ?: '');
-define('DB_CHARSET', getenv('BEANPAY_DB_CHARSET') ?: 'utf8mb4');
+if (file_exists(__DIR__ . '/database_production.php')) {
+    // Load production credentials in Hostinger
+    require_once __DIR__ . '/database_production.php';
+} else {
+    // Localhost fallback
+    define('DB_HOST', getenv('BEANPAY_DB_HOST') ?: 'localhost');
+    define('DB_NAME', getenv('BEANPAY_DB_NAME') ?: 'beanpay');
+    define('DB_USER', getenv('BEANPAY_DB_USER') ?: 'root');
+    define('DB_PASS', getenv('BEANPAY_DB_PASS') ?: '');
+    define('DB_CHARSET', getenv('BEANPAY_DB_CHARSET') ?: 'utf8mb4');
+}
 
 // Base URL (Dynamic)
 if ($_SERVER['HTTP_HOST'] === 'localhost' || $_SERVER['HTTP_HOST'] === '127.0.0.1') {
