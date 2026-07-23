@@ -20,7 +20,7 @@
     ],
     "id": "/",
     "categories": ["business", "finance", "productivity"],
-    "display_override": ["window-controls-overlay", "standalone"],
+    "display_override": ["tabbed", "window-controls-overlay", "standalone"],
     "prefer_related_applications": false,
     "related_applications": [
         {
@@ -53,6 +53,31 @@
             "description": "Buka Dashboard"
         }
     ],
+    "note_taking": {
+        "new_note_url": "/?action=new_note"
+    },
+    "widgets": [
+        {
+            "name": "Checkpoint POS Widget",
+            "description": "Widget untuk aplikasi POS",
+            "tag": "pos_widget",
+            "ms_ac_template": "/widget.json",
+            "data": "/widget-data.json"
+        }
+    ],
+    "edge_side_panel": {
+        "preferred_width": 400
+    },
+    "share_target": {
+        "action": "/?action=share",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url"
+        }
+    },
     "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
     "icons": [
         {
