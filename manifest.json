@@ -2,12 +2,12 @@
     "name": "Checkpoint POS",
     "short_name": "Checkpoint",
     "description": "Aplikasi POS Kasir untuk restoran dan cafe.",
-    "start_url": "/BeanPay/",
+    "start_url": "/",
     "display": "standalone",
     "orientation": "any",
     "background_color": "#F8FAFC",
     "theme_color": "#0F172A",
-    "scope": "/BeanPay/",
+    "scope": "/",
     "icons": [
         {
             "src": "assets/images/logo.jpeg",
