@@ -43,7 +43,7 @@ try {
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
 } catch (PDOException $e) {
     error_log('Database connection failed: ' . $e->getMessage());
-    die('Koneksi database gagal. Hubungi administrator.');
+    die('Koneksi database gagal. Error: ' . $e->getMessage());
 }
 
 // Start session if not already started
