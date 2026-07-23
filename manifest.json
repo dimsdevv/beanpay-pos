@@ -8,6 +8,13 @@
     "background_color": "#F8FAFC",
     "theme_color": "#0F172A",
     "scope": "/",
+    "lang": "id-ID",
+    "dir": "ltr",
+    "scope_extensions": [
+        {
+            "origin": "*.cekpoint.store"
+        }
+    ],
     "id": "/",
     "categories": ["business", "finance", "productivity"],
     "display_override": ["window-controls-overlay", "standalone"],
