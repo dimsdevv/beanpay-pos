@@ -12,14 +12,20 @@
     "dir": "ltr",
     "scope_extensions": [
         {
-            "origin": "*.cekpoint.store"
+            "origin": "https://auth.cekpoint.store"
         }
     ],
     "id": "/",
     "categories": ["business", "finance", "productivity"],
     "display_override": ["window-controls-overlay", "standalone"],
     "prefer_related_applications": false,
-    "related_applications": [],
+    "related_applications": [
+        {
+            "platform": "play",
+            "url": "https://play.google.com/store/apps/details?id=store.cekpoint.app",
+            "id": "store.cekpoint.app"
+        }
+    ],
     "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
     "icons": [
         {
