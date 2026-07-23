@@ -8,18 +8,28 @@
     "background_color": "#F8FAFC",
     "theme_color": "#0F172A",
     "scope": "/",
+    "id": "/",
+    "categories": ["business", "finance", "productivity"],
     "icons": [
         {
             "src": "assets/images/logo.jpeg",
-            "sizes": "192x192",
+            "sizes": "1254x1254",
             "type": "image/jpeg",
-            "purpose": "any"
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "assets/images/logo.jpeg",
+            "sizes": "1254x1254",
+            "type": "image/jpeg",
+            "form_factor": "wide"
         },
         {
             "src": "assets/images/logo.jpeg",
-            "sizes": "512x512",
+            "sizes": "1254x1254",
             "type": "image/jpeg",
-            "purpose": "any maskable"
+            "form_factor": "narrow"
         }
     ]
 }
