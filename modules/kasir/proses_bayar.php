@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 
 requireRole(['kasir', 'admin']);
+requireCsrfToken();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pesanan_id = (int)$_POST['pesanan_id'] ?? 0;
@@ -24,8 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sesi_id = $sesi['id'];
         
         // 2. Cek pesanan
-        $stmtPesan = $pdo->prepare("SELECT subtotal, service_persen, pajak_persen, total_harga, meja_id, status_pesanan FROM pesanan WHERE id = ? FOR UPDATE");
-        $stmtPesan->execute([$pesanan_id]);
+        $stmtPesan = $pdo->prepare("SELECT subtotal, service_persen, pajak_persen, total_harga, meja_id, status_pesanan, stock_deduction_done FROM pesanan WHERE id = ? AND waiter_id = ? FOR UPDATE");
+        $stmtPesan->execute([$pesanan_id, $_SESSION['user_id']]);
         $pesanan = $stmtPesan->fetch();
         
         if (!$pesanan) {
@@ -61,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Hitung ulang Pajak & Service
             $subtotal_bersih = $pesanan['subtotal'] - $diskon_nominal;
-            $new_service = ($subtotal_bersih * $pesanan['service_persen']) / 100;
-            $new_pajak = (($subtotal_bersih + $new_service) * $pesanan['pajak_persen']) / 100;
+            $new_service = round(($subtotal_bersih * $pesanan['service_persen']) / 100 / 100) * 100;
+            $new_pajak = round((($subtotal_bersih + $new_service) * $pesanan['pajak_persen']) / 100 / 100) * 100;
             $total_tagihan = $subtotal_bersih + $new_service + $new_pajak;
             
             // Update pesanan dgn nilai baru
@@ -79,21 +80,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $kembalian = $jumlah_bayar - $total_tagihan;
         
-        // 3. Insert ke tabel pembayaran
+        // 3. Kurangi stok bahan berdasarkan resep jika belum dideduksi
+        if (!$pesanan['stock_deduction_done']) {
+            $stmtDetailPesanan = $pdo->prepare("SELECT dp.menu_id, dp.qty, m.nama_menu FROM detail_pesanan dp JOIN menu m ON dp.menu_id = m.id WHERE dp.pesanan_id = ?");
+            $stmtDetailPesanan->execute([$pesanan_id]);
+            $detailPesanan = $stmtDetailPesanan->fetchAll();
+
+            $stmtResep = $pdo->prepare("SELECT rm.bahan_id, rm.jumlah_dibutuhkan, b.nama_bahan, b.stok_sekarang FROM resep_menu rm JOIN bahan_baku b ON rm.bahan_id = b.id WHERE rm.menu_id = ? FOR UPDATE");
+            $stmtUpdateBahan = $pdo->prepare("UPDATE bahan_baku SET stok_sekarang = stok_sekarang - ? WHERE id = ?");
+            foreach ($detailPesanan as $detail) {
+                $stmtResep->execute([$detail['menu_id']]);
+                $recipes = $stmtResep->fetchAll();
+                foreach ($recipes as $recipe) {
+                    $totalNeeded = $detail['qty'] * (float)$recipe['jumlah_dibutuhkan'];
+                    if ($totalNeeded > (float)$recipe['stok_sekarang']) {
+                        throw new Exception("Stok tidak mencukupi untuk bahan \"{$recipe['nama_bahan']}\" pada menu \"{$detail['nama_menu']}\".");
+                    }
+                    $stmtUpdateBahan->execute([$totalNeeded, $recipe['bahan_id']]);
+                }
+            }
+            $pdo->prepare("UPDATE pesanan SET stock_deduction_done = 1 WHERE id = ?")->execute([$pesanan_id]);
+        }
+        
+        // 4. Insert ke tabel pembayaran
         $stmtBayar = $pdo->prepare("INSERT INTO pembayaran (pesanan_id, sesi_kasir_id, metode_pembayaran, jumlah_bayar, kembalian, waktu_bayar) VALUES (?, ?, ?, ?, ?, NOW())");
         $stmtBayar->execute([$pesanan_id, $sesi_id, $metode_pembayaran, $jumlah_bayar, $kembalian]);
         
-        // 4. Update pesanan menjadi dibayar
-        $stmtUpdatePesan = $pdo->prepare("UPDATE pesanan SET status_pesanan = 'dibayar' WHERE id = ?");
-        $stmtUpdatePesan->execute([$pesanan_id]);
+        // 5. State machine: pastikan sudah selesai, lalu dibayar
+        $pdo->prepare("UPDATE pesanan SET status_pesanan = 'selesai' WHERE id = ? AND status_pesanan NOT IN ('dibayar', 'dibatalkan')")->execute([$pesanan_id]);
+        $pdo->prepare("UPDATE detail_pesanan SET status_item = 'ready', waktu_selesai_masak = NOW() WHERE pesanan_id = ? AND status_item != 'ready'")->execute([$pesanan_id]);
         
-        // 5. Kosongkan meja jika dine-in
+        // 5b. Update status pesanan jadi dibayar
+        $pdo->prepare("UPDATE pesanan SET status_pesanan = 'dibayar' WHERE id = ?")->execute([$pesanan_id]);
+        
+        // 6. Kosongkan meja jika dine-in
         if ($pesanan['meja_id']) {
             $stmtMeja = $pdo->prepare("UPDATE meja SET status = 'kosong' WHERE id = ?");
             $stmtMeja->execute([$pesanan['meja_id']]);
         }
         
-        // 6. Update total pemasukan di sesi kasir
+        // 7. Update total pemasukan di sesi kasir
         $stmtUpdateSesi = $pdo->prepare("UPDATE sesi_kasir SET total_pemasukan = total_pemasukan + ? WHERE id = ?");
         $stmtUpdateSesi->execute([$total_tagihan, $sesi_id]);
         

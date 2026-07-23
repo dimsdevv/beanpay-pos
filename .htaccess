@@ -1,0 +1,7 @@
+<FilesMatch "^(scratch_.*|test_.*|_tmp_.*|run_migrate_.*|migrate_.*|fix_.*|seeder_.*)\.php$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(sql|bak|env)$">
+    Require all denied
+</FilesMatch>

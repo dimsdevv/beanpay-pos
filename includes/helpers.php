@@ -1,6 +1,6 @@
 <?php
 /**
- * BeanPay - Helpers
+ * Checkpoint POS - Helpers
  */
 
 function formatRupiah($angka) {

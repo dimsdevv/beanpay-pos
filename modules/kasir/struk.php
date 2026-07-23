@@ -6,6 +6,17 @@ requireRole(['kasir', 'admin']);
 
 $pesanan_id = (int)$_GET['pesanan_id'] ?? 0;
 
+// Baca pengaturan toko
+$stmtSet = $pdo->query("SELECT * FROM pengaturan");
+$settings = [];
+while ($s = $stmtSet->fetch()) {
+    $settings[$s['kunci']] = $s['nilai'];
+}
+$nama_toko      = $settings['nama_toko'] ?? 'Checkpoint Cafe';
+$alamat_toko    = $settings['alamat_toko'] ?? '';
+$telepon_toko   = $settings['telepon_toko'] ?? '';
+$cetak_otomatis = ($settings['cetak_otomatis'] ?? '1') === '1';
+
 // Ambil data pembayaran & pesanan
 $stmt = $pdo->prepare("SELECT p.*, b.metode_pembayaran, b.jumlah_bayar, b.kembalian, b.waktu_bayar, m.nomor_meja, u.nama_lengkap as nama_kasir
                        FROM pesanan p 
@@ -13,8 +24,8 @@ $stmt = $pdo->prepare("SELECT p.*, b.metode_pembayaran, b.jumlah_bayar, b.kembal
                        LEFT JOIN meja m ON p.meja_id = m.id
                        JOIN sesi_kasir s ON b.sesi_kasir_id = s.id
                        JOIN users u ON s.kasir_id = u.id
-                       WHERE p.id = ?");
-$stmt->execute([$pesanan_id]);
+                       WHERE p.id = ? AND s.kasir_id = ?");
+$stmt->execute([$pesanan_id, $_SESSION['user_id']]);
 $order = $stmt->fetch();
 
 if (!$order) {
@@ -125,9 +136,9 @@ $items = $stmtItems->fetchAll();
 
     <div class="ticket">
         <div class="center">
-            <h2>BEANPAY CAFE</h2>
-            <p>Jl. Coffee Avenue No. 123</p>
-            <p>Telp: 0812-3456-7890</p>
+            <h2><?= htmlspecialchars($nama_toko) ?></h2>
+            <p><?= htmlspecialchars($alamat_toko) ?></p>
+            <p><?= htmlspecialchars($telepon_toko) ?></p>
         </div>
         
         <div class="divider"></div>
@@ -203,7 +214,7 @@ $items = $stmtItems->fetchAll();
         
         <div class="center mt-4">
             <p>Terima kasih atas kunjungan Anda!</p>
-            <p><i>Layanan ini didukung oleh BeanPay</i></p>
+            <p><i>Layanan ini didukung oleh Checkpoint POS</i></p>
         </div>
         
         <div class="no-print">
@@ -216,14 +227,16 @@ $items = $stmtItems->fetchAll();
     <script>
         // Auto print upon load
         window.onload = function() {
+            <?php if ($cetak_otomatis): ?>
             setTimeout(function() {
                 window.print();
             }, 500);
+            <?php endif; ?>
         }
 
         function sendWhatsApp() {
             // Generate text receipt
-            let text = "*BEANPAY CAFE*\n";
+            let text = "*<?= htmlspecialchars($nama_toko) ?>*\n";
             text += "Order No: <?= $order['nomor_pesanan'] ?>\n";
             text += "Tanggal: <?= date('d/m/Y H:i', strtotime($order['waktu_bayar'])) ?>\n";
             text += "Pelanggan: <?= $order['nama_pelanggan'] ?: 'Guest' ?>\n";
@@ -248,7 +261,7 @@ $items = $stmtItems->fetchAll();
             text += "-----------------------------------\n";
             text += "Metode Bayar: <?= strtoupper($order['metode_pembayaran']) ?> (Rp <?= number_format($order['jumlah_bayar'], 0, ',', '.') ?>)\n";
             text += "Kembalian: Rp <?= number_format($order['kembalian'], 0, ',', '.') ?>\n\n";
-            text += "Terima kasih atas kunjungan Anda! 🙏";
+            text += "Terima kasih atas kunjungan Anda!";
             
             let url = "https://wa.me/?text=" + encodeURIComponent(text);
             window.open(url, "_blank");

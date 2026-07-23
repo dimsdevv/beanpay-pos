@@ -3,6 +3,7 @@ $page_title = 'Manajemen Promo & Voucher';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 requireRole(['admin']);
+requireCsrfToken();
 
 // Handle aksi CRUD
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -49,7 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
         } elseif ($action === 'delete') {
             $id = (int)$_POST['id'];
+            $stmtPromo = $pdo->prepare("SELECT kode_promo FROM promo WHERE id = ?");
+            $stmtPromo->execute([$id]);
+            $kodePromo = $stmtPromo->fetchColumn();
             $pdo->prepare("DELETE FROM promo WHERE id = ?")->execute([$id]);
+            logAuditAction('delete_promo', 'promo', $id, $kodePromo ? "Promo: $kodePromo" : null);
             $_SESSION['success'] = "Promo berhasil dihapus.";
         }
     } catch (Exception $e) {
@@ -136,6 +141,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 <button @click="showModal = true; modalMode = 'edit'; formData = <?= htmlspecialchars(json_encode($p)) ?>" 
                         class="flex-1 py-3 text-xs font-bold text-gray-500 hover:text-theme-leaf hover:bg-theme-bg transition-colors">Edit</button>
                 <form action="promo.php" method="POST" class="flex-1 flex m-0" onsubmit="return confirm('Yakin ingin menghapus promo ini secara permanen?')">
+                    <?= csrfField() ?>
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="id" value="<?= $p['id'] ?>">
                     <button type="submit" class="flex-1 py-3 text-xs font-bold text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors">
@@ -153,6 +159,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <h3 class="text-xl font-extrabold text-theme-evergreen mb-6" x-text="modalMode === 'add' ? 'Buat Promo Baru' : 'Edit Promo'"></h3>
             
             <form action="promo.php" method="POST" class="space-y-4">
+                <?= csrfField() ?>
                 <input type="hidden" name="action" :value="modalMode">
                 <input type="hidden" name="id" x-model="formData.id">
                 

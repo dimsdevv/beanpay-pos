@@ -1,11 +1,18 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/auth.php';
 
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request']);
+    exit;
+}
+
+// Require login & CSRF for API that reads business data
+requireLogin();
+if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+    echo json_encode(['success' => false, 'message' => 'Token keamanan tidak valid.']);
     exit;
 }
 

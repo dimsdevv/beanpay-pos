@@ -9,6 +9,7 @@ if (isLoggedIn()) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireCsrfToken();
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
@@ -20,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password'])) {
+            session_regenerate_id(true);
             $_SESSION['user_id']      = $user['id'];
             $_SESSION['username']     = $user['username'];
             $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
@@ -37,40 +39,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — BeanPay POS</title>
-    <meta name="description" content="Masuk ke sistem BeanPay POS untuk mengelola restoran Anda.">
+    <title>Login — Checkpoint POS</title>
+    <meta name="description" content="Masuk ke sistem Checkpoint POS untuk mengelola restoran Anda.">
+    <!-- Local Vendor Assets (Offline-first) -->
+    <script src="<?= BASE_URL ?>/assets/vendor/tailwind.min.js"></script>
+
+    <!-- Google Fonts: Inter & Outfit (fallback) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    },
                     colors: {
                         vibe: {
-                            'primary':            '#004ac6',
-                            'primary-container':  '#2563eb',
-                            'on-primary':         '#ffffff',
-                            'secondary':          '#006c49',
-                            'error':              '#ba1a1a',
-                            'bg':                 '#f8f9ff',
-                            'surface':            '#ffffff',
-                            'surface-container':  '#e5eeff',
-                            'on-surface':         '#0b1c30',
-                            'on-surface-variant': '#434655',
-                            'outline':            '#737686',
-                            'outline-variant':    '#c3c6d7',
+                            'primary': '#0F172A',
+                            'primary-container': '#1E293B',
+                            'primary-light': '#F8FAFC',
+                            'on-primary': '#FFFFFF',
+                            'secondary': '#0F766E',
+                            'secondary-container': '#CCFBF1',
+                            'error': '#DC2626',
+                            'error-container': '#FEE2E2',
+                            'bg': '#FFFFFF',
+                            'surface': '#FFFFFF',
+                            'surface-dim': '#F8FAFC',
+                            'surface-container': '#F1F5F9',
+                            'on-surface': '#020617',
+                            'on-surface-variant': '#475569',
+                            'outline': '#E2E8F0',
+                            'outline-variant': '#CBD5E1',
                         }
                     },
                     animation: {
-                        'fade-up': 'fadeUp 0.5s ease-out forwards',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
                     },
                     keyframes: {
-                        fadeUp: {
-                            '0%':   { opacity: '0', transform: 'translateY(16px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        fadeIn: {
+                            '0%':   { opacity: '0' },
+                            '100%': { opacity: '1' },
                         }
                     }
                 }
@@ -78,113 +90,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </script>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, .font-display { font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; }
 
-        /* Floating blobs */
-        .blob {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.35;
-            animation: blobFloat 8s ease-in-out infinite alternate;
-        }
-        @keyframes blobFloat {
-            0%   { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(20px, -20px) scale(1.08); }
-        }
-
-        /* Custom input focus ring */
         .vibe-input {
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: border-color 0.15s;
         }
         .vibe-input:focus {
             outline: none;
-            border-color: #004ac6;
-            box-shadow: 0 0 0 3px rgba(0, 74, 198, 0.12);
+            border-color: #020617;
         }
 
-        /* Password toggle */
         .show-pass { cursor: pointer; }
-
-        /* Fade-up stagger */
-        .delay-1 { animation-delay: 0.05s; }
-        .delay-2 { animation-delay: 0.12s; }
-        .delay-3 { animation-delay: 0.19s; }
-        .delay-4 { animation-delay: 0.26s; }
-        .delay-5 { animation-delay: 0.33s; }
+        
+        * { box-shadow: none !important; }
         .stagger { opacity: 0; }
+        .delay-1 { animation-delay: 0.05s; }
+        .delay-2 { animation-delay: 0.1s; }
+        .delay-3 { animation-delay: 0.15s; }
+        .delay-4 { animation-delay: 0.2s; }
+        .delay-5 { animation-delay: 0.25s; }
     </style>
 </head>
 <body class="min-h-screen flex bg-vibe-bg overflow-hidden">
 
     <!-- ════════════════════════════════════
-         LEFT PANEL — Branding / Hero
+         LEFT PANEL — Logo
     ════════════════════════════════════ -->
-    <div class="hidden lg:flex lg:w-[52%] xl:w-[55%] relative flex-col overflow-hidden">
-
-        <!-- Background image -->
-        <div class="absolute inset-0 bg-cover bg-center"
-             style="background-image: url('/BeanPay/assets/login_bg.png')"></div>
-
-        <!-- Dark overlay -->
-        <div class="absolute inset-0 bg-gradient-to-br from-[#001a4d]/85 via-[#003399]/60 to-[#004ac6]/40"></div>
-
-        <!-- Decorative blobs -->
-        <div class="blob w-80 h-80 bg-blue-400 top-[-60px] left-[-60px]" style="animation-delay:0s"></div>
-        <div class="blob w-64 h-64 bg-indigo-500 bottom-20 right-[-40px]" style="animation-delay:2s"></div>
-        <div class="blob w-48 h-48 bg-cyan-400 bottom-[-20px] left-32" style="animation-delay:4s"></div>
-
-        <!-- Content -->
-        <div class="relative z-10 flex flex-col justify-between h-full p-10 xl:p-14">
-            <!-- Logo top -->
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z"/>
-                    </svg>
-                </div>
-                <span class="text-white font-extrabold text-lg tracking-tight">BeanPay</span>
-                <span class="text-white/50 text-xs font-medium border border-white/20 rounded-full px-2 py-0.5">POS</span>
-            </div>
-
-            <!-- Main hero text -->
-            <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 text-white/80 text-xs font-semibold mb-6">
-                    <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow"></span>
-                    Sistem aktif & siap digunakan
-                </div>
-                <h1 class="text-4xl xl:text-5xl font-extrabold text-white leading-tight mb-4">
-                    Kelola restoran<br>
-                    <span class="text-blue-200">lebih cerdas.</span>
-                </h1>
-                <p class="text-white/65 text-base font-medium leading-relaxed max-w-sm">
-                    Platform POS all-in-one untuk kasir, dapur, waiter, dan analitik bisnis Anda — dalam satu genggaman.
-                </p>
-
-                <!-- Feature pills -->
-                <div class="flex flex-wrap gap-2 mt-8">
-                    <?php
-                    $features = [
-                        ['icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'label' => 'Laporan Real-time'],
-                        ['icon' => 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', 'label' => 'Multi Metode Bayar'],
-                        ['icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'label' => 'Kitchen Display'],
-                    ];
-                    foreach ($features as $f): ?>
-                    <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 text-white/80 text-xs font-semibold">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= $f['icon'] ?>"/>
-                        </svg>
-                        <?= $f['label'] ?>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <!-- Footer credit -->
-            <div class="text-white/35 text-xs font-medium">
-                &copy; <?= date('Y') ?> BeanPay POS System · Semua hak dilindungi
-            </div>
-        </div>
+    <div class="hidden lg:flex lg:w-[52%] xl:w-[55%] relative overflow-hidden">
+        <img src="<?= BASE_URL ?>/assets/images/logo.jpeg" alt="Checkpoint POS" class="absolute inset-0 w-full h-full object-cover">
     </div>
 
     <!-- ════════════════════════════════════
@@ -193,74 +127,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="flex-1 flex items-center justify-center p-6 sm:p-10 bg-vibe-bg relative">
 
         <!-- Mobile logo (only on small screens) -->
+        <!-- Mobile logo -->
         <div class="absolute top-6 left-6 flex items-center gap-2 lg:hidden">
-            <div class="w-8 h-8 bg-vibe-primary rounded-lg flex items-center justify-center">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z"/>
-                </svg>
-            </div>
-            <span class="font-extrabold text-vibe-on-surface">BeanPay</span>
+            <img src="<?= BASE_URL ?>/assets/images/logo.jpeg" alt="Checkpoint POS" class="h-8 w-auto">
+            <span class="font-extrabold text-vibe-on-surface">Checkpoint</span>
         </div>
 
         <!-- Form card -->
         <div class="w-full max-w-sm xl:max-w-md">
 
             <!-- Header -->
-            <div class="mb-8 stagger animate-fade-up delay-1">
-                <h2 class="text-2xl xl:text-3xl font-extrabold text-vibe-on-surface mb-1.5">Selamat datang! 👋</h2>
-                <p class="text-vibe-on-surface-variant text-sm font-medium">Masuk untuk melanjutkan ke dashboard Anda.</p>
+            <div class="mb-8 stagger animate-fade-in delay-1">
+                <h2 class="text-2xl xl:text-3xl font-display font-extrabold text-vibe-on-surface mb-1.5">Masuk</h2>
+                <p class="text-vibe-on-surface-variant text-sm font-medium">Masukkan akun Anda untuk mengakses sistem.</p>
             </div>
 
             <!-- Error alert -->
             <?php if ($error): ?>
-            <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3 stagger animate-fade-up">
-                <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="mb-5 p-4 rounded-md bg-vibe-error-container border border-vibe-error/20 flex items-start gap-3 stagger animate-fade-in">
+                <div class="w-8 h-8 rounded bg-white/50 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-vibe-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
                 <div>
-                    <div class="text-sm font-bold text-red-700 mb-0.5">Login Gagal</div>
-                    <div class="text-xs text-red-600"><?= htmlspecialchars($error) ?></div>
+                    <div class="text-sm font-semibold text-vibe-error mb-0.5">Gagal Masuk</div>
+                    <div class="text-xs text-vibe-error/80"><?= htmlspecialchars($error) ?></div>
                 </div>
             </div>
             <?php endif; ?>
 
             <!-- Form -->
             <form method="POST" action="" class="space-y-5" id="loginForm">
+                <?= csrfField() ?>
 
                 <!-- Username -->
-                <div class="stagger animate-fade-up delay-2">
-                    <label for="username" class="block text-sm font-semibold text-vibe-on-surface mb-2">Username</label>
+                <div class="stagger animate-fade-in delay-2">
+                    <label for="username" class="block text-xs font-semibold uppercase tracking-widest text-vibe-on-surface-variant mb-2">Username</label>
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-vibe-outline">
-                            <svg class="w-4.5 h-4.5 w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-vibe-outline-variant">
+                            <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
                         </span>
                         <input type="text" name="username" id="username" required autofocus
                                value="<?= htmlspecialchars($_POST['username'] ?? '') ?>"
                                placeholder="Masukkan username"
-                               class="vibe-input w-full pl-11 pr-4 py-3 bg-white border border-vibe-outline-variant/40 rounded-xl text-vibe-on-surface text-sm font-medium placeholder-vibe-outline shadow-sm">
+                               class="vibe-input w-full pl-10 pr-4 py-2.5 bg-white border border-vibe-outline-variant rounded-md text-vibe-on-surface text-sm font-medium placeholder-vibe-outline-variant outline-none">
                     </div>
                 </div>
 
                 <!-- Password -->
-                <div class="stagger animate-fade-up delay-3" x-data="{ show: false }" xmlns:x-data="http://www.w3.org/1999/xhtml">
-                    <label for="password" class="block text-sm font-semibold text-vibe-on-surface mb-2">Password</label>
+                <div class="stagger animate-fade-in delay-3" x-data="{ show: false }" xmlns:x-data="http://www.w3.org/1999/xhtml">
+                    <label for="password" class="block text-xs font-semibold uppercase tracking-widest text-vibe-on-surface-variant mb-2">Password</label>
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-vibe-outline">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-vibe-outline-variant">
                             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
                         </span>
                         <input id="passwordInput" name="password" required
                                placeholder="Masukkan password"
-                               class="vibe-input w-full pl-11 pr-12 py-3 bg-white border border-vibe-outline-variant/40 rounded-xl text-vibe-on-surface text-sm font-medium placeholder-vibe-outline shadow-sm"
+                               class="vibe-input w-full pl-10 pr-10 py-2.5 bg-white border border-vibe-outline-variant rounded-md text-vibe-on-surface text-sm font-medium placeholder-vibe-outline-variant outline-none"
                                type="password">
                         <!-- Toggle visibility -->
                         <button type="button" onclick="togglePassword()"
-                                class="show-pass absolute right-4 top-1/2 -translate-y-1/2 text-vibe-outline hover:text-vibe-primary transition-colors" id="eyeBtn">
+                                class="show-pass absolute right-3 top-1/2 -translate-y-1/2 text-vibe-outline-variant hover:text-vibe-on-surface transition-colors" id="eyeBtn">
                             <svg id="eyeIcon" class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -270,13 +202,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <!-- Submit button -->
-                <div class="stagger animate-fade-up delay-4 pt-1">
+                <div class="stagger animate-fade-in delay-4 pt-2">
                     <button type="submit" id="submitBtn"
-                            class="w-full flex items-center justify-center gap-2.5 py-3.5 bg-vibe-primary hover:bg-vibe-primary-container text-white font-bold rounded-xl shadow-lg shadow-vibe-primary/30 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 text-sm">
+                            class="w-full flex items-center justify-center gap-2 py-3 bg-vibe-primary hover:bg-vibe-primary-container text-white font-medium rounded-md transition-colors text-sm">
+                        <span>Masuk</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                         </svg>
-                        Masuk ke Dashboard
                     </button>
                 </div>
             </form>
@@ -291,12 +223,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="grid grid-cols-3 gap-2">
                     <?php
                     $roles = [
-                        ['icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', 'label' => 'Admin', 'color' => 'text-vibe-primary bg-vibe-surface-container'],
-                        ['icon' => 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', 'label' => 'Kasir', 'color' => 'text-vibe-secondary bg-green-50'],
-                        ['icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'label' => 'Dapur', 'color' => 'text-orange-600 bg-orange-50'],
+                        ['icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', 'label' => 'Admin', 'color' => 'text-vibe-on-surface bg-white'],
+                        ['icon' => 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', 'label' => 'Kasir', 'color' => 'text-vibe-on-surface bg-white'],
                     ];
-                    foreach ($roles as $r): ?>
-                    <div class="flex flex-col items-center gap-1.5 p-3 rounded-xl <?= $r['color'] ?> border border-vibe-outline-variant/10">
+                    ?>
+                    <div class="col-span-1"></div>
+                    <?php foreach ($roles as $r): ?>
+                    <div class="flex flex-col items-center gap-1.5 p-3 rounded-md <?= $r['color'] ?> border border-vibe-outline-variant">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= $r['icon'] ?>"/>
                         </svg>
@@ -308,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Copyright (mobile) -->
             <div class="mt-8 text-center text-xs text-vibe-outline stagger animate-fade-up delay-5">
-                &copy; <?= date('Y') ?> BeanPay POS · Hak cipta dilindungi
+                &copy; <?= date('Y') ?> Checkpoint POS · Hak cipta dilindungi
             </div>
         </div>
     </div>

@@ -1,5 +1,5 @@
 -- =============================================
--- BeanPay - Sistem Kasir Cafe & Restaurant
+-- Checkpoint POS - Sistem Kasir Cafe & Restaurant
 -- Database Schema & Seed Data
 -- =============================================
 
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     nama_lengkap VARCHAR(100) NOT NULL,
-    role ENUM('admin', 'kasir', 'waiter', 'dapur') NOT NULL DEFAULT 'waiter',
+    role ENUM('admin', 'kasir') NOT NULL DEFAULT 'kasir',
     status ENUM('aktif', 'nonaktif') NOT NULL DEFAULT 'aktif',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -106,9 +106,7 @@ CREATE TABLE IF NOT EXISTS pembayaran (
 -- Admin default: username=admin, password=admin123
 INSERT INTO users (username, password, nama_lengkap, role, status) VALUES
 ('admin', '$2y$10$kyCLVMdDp6RRD7/7KplBcemsqONL8C0OHGRWKpGTxe3pMVyWQNga6', 'Administrator', 'admin', 'aktif'),
-('kasir1', '$2y$10$kyCLVMdDp6RRD7/7KplBcemsqONL8C0OHGRWKpGTxe3pMVyWQNga6', 'Siti Kasir', 'kasir', 'aktif'),
-('waiter1', '$2y$10$kyCLVMdDp6RRD7/7KplBcemsqONL8C0OHGRWKpGTxe3pMVyWQNga6', 'Budi Waiter', 'waiter', 'aktif'),
-('dapur1', '$2y$10$kyCLVMdDp6RRD7/7KplBcemsqONL8C0OHGRWKpGTxe3pMVyWQNga6', 'Andi Chef', 'dapur', 'aktif');
+('kasir1', '$2y$10$kyCLVMdDp6RRD7/7KplBcemsqONL8C0OHGRWKpGTxe3pMVyWQNga6', 'Siti Kasir', 'kasir', 'aktif');
 
 -- Kategori
 INSERT INTO kategori (nama_kategori) VALUES

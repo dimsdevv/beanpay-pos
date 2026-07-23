@@ -43,58 +43,24 @@ document.addEventListener('alpine:init', () => {
 
         async fetchNotifications() {
             try {
-                // Determine API endpoint based on role
-                let endpoint = '';
-                if (this.userRole === 'waiter') {
-                    endpoint = `${this.baseUrl}/api/notif_waiter.php?last_id=${this.lastId}`;
-                } else if (this.userRole === 'admin' || this.userRole === 'kasir') {
-                    endpoint = `${this.baseUrl}/api/realtime.php?last_id=${this.lastId}`;
-                } else {
-                    return; // No notifs for dapur via this system
-                }
+                let endpoint = `${this.baseUrl}/api/realtime.php?last_id=${this.lastId}`;
 
                 const res = await fetch(endpoint);
                 if (!res.ok) return;
                 const data = await res.json();
 
-                if (this.userRole === 'waiter') {
-                    this.handleWaiterNotifs(data);
-                } else {
-                    this.handleAdminNotifs(data);
-                }
+                this.handleNotifs(data);
                 this.isFirstLoad = false;
             } catch (err) {
-                console.warn('[BeanPay Notif] Error:', err);
+                console.warn('[Checkpoint] Notif error:', err);
             }
         },
 
-        handleWaiterNotifs(data) {
-            if (data.notifs && data.notifs.length > 0) {
-                const newItems = data.notifs.map(n => ({
-                    id: n.id,
-                    title: 'Pesanan Selesai!',
-                    sub: n.pesan,
-                    waktu: new Date(n.created_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}),
-                    isNew: true
-                }));
-                this.items = [...newItems, ...this.items].slice(0, 20);
-                this.unreadCount = data.unread_count;
-
-                if (!this.isFirstLoad) {
-                    newItems.forEach(n => {
-                        this.showToast('success', '🔔 ' + n.title, n.sub);
-                    });
-                }
-                this.lastId = data.max_id;
-                localStorage.setItem('beanpay_last_notif_id', String(data.max_id));
-            }
-        },
-
-        handleAdminNotifs(data) {
+        handleNotifs(data) {
             if (data.notifications && data.notifications.length > 0) {
                 const newItems = data.notifications.map(n => ({
                     id: n.id,
-                    title: '💰 Pembayaran Baru',
+                    title: '<span style="font-weight:700;display:flex;align-items:center;gap:6px"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg> Pembayaran Baru</span>',
                     sub: `${n.nomor_pesanan} • <b>${this.formatRp(n.total)}</b> (${n.metode})`,
                     waktu: 'Baru saja',
                     isNew: true
@@ -145,11 +111,6 @@ document.addEventListener('alpine:init', () => {
         },
 
         async markAllRead() {
-            if (this.userRole === 'waiter') {
-                const fd = new FormData();
-                fd.append('action', 'mark_all_read');
-                await fetch(`${this.baseUrl}/api/notif_waiter.php`, { method: 'POST', body: fd });
-            }
             this.unreadCount = 0;
             this.items = this.items.map(i => ({ ...i, isNew: false }));
         },

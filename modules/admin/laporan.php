@@ -87,7 +87,7 @@ $transactions = $stmtTrx->fetchAll();
 require_once __DIR__ . '/../../includes/sidebar.php';
 ?>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/chart.min.js"></script>
 
 <div class="space-y-8">
 
@@ -126,7 +126,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     <button type="submit" class="p-2 bg-theme-ocean text-white rounded-xl hover:bg-theme-ocean-light transition-colors shadow-sm hover-lift">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </button>
-                    <button type="button" onclick="window.print()" class="p-2 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-colors shadow-sm ml-1 hover-lift" title="Print Report">
+                    <button type="button" onclick="window.print()" class="p-2 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-colors shadow-sm ml-1 hover-lift" title="Cetak Laporan">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                     </button>
                 </form>
@@ -220,7 +220,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     </div>
                     <div class="text-right">
                         <div class="font-black text-sm text-theme-evergreen"><?= formatRupiah($m['total']) ?></div>
-                        <div class="text-xs text-gray-400 font-medium"><?= $m['cnt'] ?> transactions</div>
+                        <div class="text-xs text-gray-400 font-medium"><?= $m['cnt'] ?> transaksi</div>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -255,7 +255,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     <div class="flex-1 min-w-0">
                         <div class="flex justify-between items-end mb-1.5">
                             <span class="font-bold text-theme-evergreen text-sm truncate pr-2 group-hover:text-theme-ocean transition-colors"><?= htmlspecialchars($item['nama_menu']) ?></span>
-                            <span class="text-xs font-black text-gray-500 whitespace-nowrap"><?= $item['total_qty'] ?> <span class="text-gray-400 font-medium">sold</span></span>
+                            <span class="text-xs font-black text-gray-500 whitespace-nowrap"><?= $item['total_qty'] ?> <span class="text-gray-400 font-medium">terjual</span></span>
                         </div>
                         <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
                             <div class="h-full bg-gradient-to-r <?= $isTop3 ? 'from-theme-sun to-theme-coral' : 'from-theme-ocean-light to-theme-ocean' ?> rounded-full" style="width: <?= $pct ?>%"></div>
@@ -286,7 +286,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </span>
-                <input type="text" x-model="searchQuery" @input="currentPage = 1" placeholder="Search order ID or cashier..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-theme-sage/30 focus:border-theme-sage text-sm font-medium transition-shadow placeholder-gray-400 shadow-sm">
+                <input type="text" x-model="searchQuery" @input="currentPage = 1" placeholder="Cari ID pesanan atau nama kasir..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-theme-sage/30 focus:border-theme-sage text-sm font-medium transition-shadow placeholder-gray-400 shadow-sm">
             </div>
         </div>
         
@@ -294,11 +294,11 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <table class="w-full">
                 <thead>
                     <tr class="bg-white border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                        <th class="px-6 py-4 text-left">Order ID</th>
-                        <th class="px-6 py-4 text-left">Date & Time</th>
-                        <th class="px-6 py-4 text-left">Cashier</th>
-                        <th class="px-6 py-4 text-left">Method</th>
-                        <th class="px-6 py-4 text-right">Amount</th>
+                        <th class="px-6 py-4 text-left">ID Pesanan</th>
+                        <th class="px-6 py-4 text-left">Tanggal & Waktu</th>
+                        <th class="px-6 py-4 text-left">Kasir</th>
+                        <th class="px-6 py-4 text-left">Metode</th>
+                        <th class="px-6 py-4 text-right">Total</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50/80">
@@ -317,7 +317,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                 <div class="font-extrabold text-theme-evergreen text-sm" x-text="t.nomor_pesanan"></div>
                                 <div class="text-[11px] font-bold mt-1 tracking-wide" 
                                      :class="t.tipe_pesanan === 'dine_in' ? 'text-theme-sage' : 'text-orange-500'" 
-                                     x-text="t.tipe_pesanan === 'dine_in' ? 'Table ' + t.nomor_meja : 'Take Away'"></div>
+                                     x-text="t.tipe_pesanan === 'dine_in' ? 'Meja ' + t.nomor_meja : 'Bungkus / Take Away'"></div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm font-bold text-gray-700" x-text="formatDate(t.waktu_bayar)"></div>
@@ -345,7 +345,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         <!-- Pagination Controls -->
         <div class="p-4 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between" x-show="totalPages > 1">
             <div class="text-xs font-medium text-gray-500">
-                Showing <span class="font-bold text-gray-700" x-text="startIndex + 1"></span> to <span class="font-bold text-gray-700" x-text="Math.min(endIndex, filteredTransactions.length)"></span> of <span class="font-bold text-gray-700" x-text="filteredTransactions.length"></span>
+                Menampilkan <span class="font-bold text-gray-700" x-text="startIndex + 1"></span> sampai <span class="font-bold text-gray-700" x-text="Math.min(endIndex, filteredTransactions.length)"></span> dari <span class="font-bold text-gray-700" x-text="filteredTransactions.length"></span> data
             </div>
             <div class="flex items-center gap-1">
                 <button @click="prevPage()" :disabled="currentPage === 1" class="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-white hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover-lift">

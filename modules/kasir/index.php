@@ -4,470 +4,804 @@ require_once __DIR__ . '/../../includes/auth.php';
 
 requireRole(['kasir', 'admin']);
 
-// Jika ada AJAX request untuk mengambil detail pesanan (HARUS SEBELUM HEADER.PHP KARENA OUTPUT JSON)
-if (isset($_GET['get_order_details']) && isset($_GET['order_id'])) {
-    $orderId = (int)$_GET['order_id'];
-    
-    // Header order
-    $stmtO = $pdo->prepare("SELECT p.*, m.nomor_meja FROM pesanan p LEFT JOIN meja m ON p.meja_id = m.id WHERE p.id = ?");
-    $stmtO->execute([$orderId]);
-    $order = $stmtO->fetch();
-    
-    // Items
-    $stmtI = $pdo->prepare("SELECT d.*, m.nama_menu FROM detail_pesanan d JOIN menu m ON d.menu_id = m.id WHERE d.pesanan_id = ?");
-    $stmtI->execute([$orderId]);
-    $items = $stmtI->fetchAll();
-    
-    header('Content-Type: application/json');
-    echo json_encode(['order' => $order, 'items' => $items]);
-    exit;
-}
-
-// AJAX: Ambil semua pesanan aktif (Real-time polling)
-if (isset($_GET['get_orders']) && $_GET['get_orders'] == 1) {
-    session_write_close();
-    $stmtOrders = $pdo->query("SELECT p.*, m.nomor_meja FROM pesanan p LEFT JOIN meja m ON p.meja_id = m.id WHERE p.status_pesanan IN ('pending', 'diproses', 'selesai') ORDER BY p.waktu_pesan DESC");
-    $orders = $stmtOrders->fetchAll();
-    
-    header('Content-Type: application/json');
-    echo json_encode(['orders' => $orders]);
-    exit;
-}
-
-$page_title = 'Cashier Station';
+$page_title = 'Cashier POS';
 require_once __DIR__ . '/../../includes/header.php';
 
-// Cek sesi kasir yang sedang aktif untuk user ini
 $stmt = $pdo->prepare("SELECT * FROM sesi_kasir WHERE kasir_id = ? AND status = 'buka' LIMIT 1");
 $stmt->execute([$_SESSION['user_id']]);
 $activeSession = $stmt->fetch();
 
-// Ambil semua pesanan yang belum dibayar
-$stmtOrders = $pdo->query("SELECT p.*, m.nomor_meja FROM pesanan p LEFT JOIN meja m ON p.meja_id = m.id WHERE p.status_pesanan IN ('pending', 'diproses', 'selesai') ORDER BY p.waktu_pesan DESC");
-$pendingOrders = $stmtOrders->fetchAll();
+$shiftStats = ['time' => '', 'modal' => 0, 'net_sales' => 0, 'cash_net' => 0, 'trx_count' => 0];
+if ($activeSession) {
+    $sId = $activeSession['id'];
+    $shiftStats['time'] = $activeSession['waktu_buka'];
+    $shiftStats['modal'] = (float)($activeSession['modal_awal'] ?? 0);
 
+    $stmtS = $pdo->prepare("SELECT
+        COALESCE(SUM(p.total_harga), 0) as net_sales,
+        COALESCE(SUM(CASE WHEN b.metode_pembayaran = 'cash' THEN b.jumlah_bayar - b.kembalian ELSE 0 END), 0) as cash_net,
+        COUNT(b.id) as trx_count
+        FROM pembayaran b
+        JOIN pesanan p ON b.pesanan_id = p.id
+        WHERE b.sesi_kasir_id = ?");
+    $stmtS->execute([$sId]);
+    $stats = $stmtS->fetch();
+    $shiftStats['net_sales'] = (float)$stats['net_sales'];
+    $shiftStats['cash_net'] = (float)$stats['cash_net'];
+    $shiftStats['trx_count'] = (int)$stats['trx_count'];
+}
 
+// Fetch settings from DB
+$settings = [];
+$stmtSet = $pdo->query("SELECT * FROM pengaturan");
+while ($s = $stmtSet->fetch()) {
+    $settings[$s['kunci']] = $s['nilai'];
+}
+$service_persen_db = (float)($settings['service_charge_persen'] ?? 5);
+$pajak_persen_db = (float)($settings['pajak_persen'] ?? 10);
+$service_aktif = ($settings['aktifkan_service'] ?? '1') === '1';
+$pajak_aktif = ($settings['aktifkan_pajak'] ?? '1') === '1';
+
+// Fetch Data for POS
+$categories = $pdo->query("SELECT * FROM kategori ORDER BY nama_kategori")->fetchAll();
+$menus = $pdo->query("
+    SELECT m.*, k.nama_kategori,
+        (SELECT COUNT(*) FROM resep_menu rm
+         JOIN bahan_baku b ON rm.bahan_id = b.id
+         WHERE rm.menu_id = m.id AND b.stok_sekarang < rm.jumlah_dibutuhkan
+        ) as missing_ingredients
+    FROM menu m
+    JOIN kategori k ON m.kategori_id = k.id
+    WHERE m.is_active = 1
+    ORDER BY k.nama_kategori, m.nama_menu
+")->fetchAll();
+$tables = $pdo->query("SELECT * FROM meja ORDER BY nomor_meja")->fetchAll();
+
+// Fetch low stock details per menu
+$lowStockDetails = [];
+$stmtLow = $pdo->query("
+    SELECT rm.menu_id, b.id, b.nama_bahan, b.stok_sekarang, rm.jumlah_dibutuhkan, b.satuan
+    FROM resep_menu rm
+    JOIN bahan_baku b ON rm.bahan_id = b.id
+    WHERE b.stok_sekarang < rm.jumlah_dibutuhkan
+");
+while ($row = $stmtLow->fetch()) {
+    $mid = $row['menu_id'];
+    if (!isset($lowStockDetails[$mid])) $lowStockDetails[$mid] = [];
+    $lowStockDetails[$mid][] = [
+        'id' => (int)$row['id'],
+        'nama' => $row['nama_bahan'],
+        'stok' => (float)$row['stok_sekarang'],
+        'butuh' => (float)$row['jumlah_dibutuhkan'],
+        'satuan' => $row['satuan']
+    ];
+}
 
 require_once __DIR__ . '/../../includes/sidebar.php';
 ?>
 
-<div x-data="cashierApp()" class="h-full flex flex-col md:flex-row gap-6">
+<style>
+.panel-slide {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cart-dot {
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.cart-dot:active {
+    transform: scale(0.9);
+}
+@media (max-width: 767px) {
+    .cart-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 40;
+        max-height: 92vh;
+        border-radius: 1rem 1rem 0 0;
+        transform: translateY(100%);
+        box-shadow: 0 -8px 30px rgba(0,0,0,0.12);
+    }
+    .cart-panel.open {
+        transform: translateY(0);
+    }
+    .cart-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        z-index: 39;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+    .cart-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+</style>
 
-    <!-- OVERLAY BUKA SHIFT (Jika belum buka shift) -->
+<div x-data="posApp()" class="h-full flex flex-col md:flex-row gap-6 relative">
+
+    <!-- OVERLAY BUKA SHIFT -->
     <?php if (!$activeSession): ?>
-    <div class="fixed inset-0 z-50 bg-theme-evergreen/40 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-[fadeIn_0.3s_ease-out_forwards]">
-            <div class="w-16 h-16 bg-theme-sage/20 text-theme-sage rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+    <div class="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white border border-vibe-outline-variant rounded-xl p-8 max-w-md w-full animate-fade-in">
+            <div class="w-12 h-12 bg-vibe-surface-container text-vibe-primary rounded-lg flex items-center justify-center mb-6 mx-auto">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             </div>
-            <h2 class="text-2xl font-bold text-center text-theme-evergreen mb-2">Open Register</h2>
-            <p class="text-center text-gray-500 text-sm mb-8">Enter your opening cash balance to start the shift.</p>
-            
+            <h2 class="text-2xl font-display font-bold text-center text-vibe-on-surface mb-2">Buka Shift</h2>
+            <p class="text-center text-vibe-on-surface-variant text-sm mb-8">Masukkan saldo awal laci kasir.</p>
             <form action="proses_buka_sesi.php" method="POST">
+                <?= csrfField() ?>
                 <div class="mb-6">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Opening Balance (Modal Awal)</label>
+                    <label class="block text-sm font-semibold text-vibe-on-surface mb-2">Modal Awal</label>
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">Rp</span>
-                        <input type="number" name="modal_awal" required min="0" class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-sage/50 focus:border-theme-sage transition-all font-bold text-lg text-theme-evergreen" placeholder="0">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-vibe-on-surface-variant font-medium">Rp</span>
+                        <input type="number" name="modal_awal" required min="0" class="w-full pl-12 pr-4 py-3 bg-vibe-surface border border-vibe-outline-variant rounded-lg focus:ring-1 focus:ring-vibe-primary focus:border-vibe-primary transition-colors font-medium text-lg text-vibe-on-surface outline-none" placeholder="0">
                     </div>
                 </div>
-                <button type="submit" class="w-full py-3.5 bg-theme-evergreen text-white font-bold rounded-xl hover:bg-theme-leaf transition-colors shadow-lg shadow-theme-evergreen/30">
-                    Start Shift
+                <button type="submit" class="w-full py-3 bg-vibe-primary text-white font-semibold rounded-lg hover:bg-vibe-primary-container transition-colors">
+                    Mulai Shift
                 </button>
             </form>
         </div>
     </div>
     <?php endif; ?>
 
-    <!-- LEFT PANEL: Daftar Pesanan -->
-    <div class="flex-1 flex flex-col overflow-hidden bg-white rounded-3xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] relative">
-        <!-- Header Panel Kiri -->
-        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white z-10 rounded-t-3xl">
-            <div>
-                <h3 class="text-lg font-bold text-theme-evergreen">Active Orders</h3>
-                <p class="text-sm text-gray-400">Select an order to process payment</p>
-            </div>
-            <div class="px-3 py-1 bg-theme-sage/10 text-theme-leaf rounded-lg font-bold text-sm">
-                <span x-text="pendingOrders.length"></span> Orders
+    <!-- ==================== MENU CATALOG ==================== -->
+    <div class="flex-1 flex flex-col overflow-hidden bg-vibe-bg relative pb-20 md:pb-0">
+
+        <?php if ($activeSession): ?>
+        <div x-data="{ shiftOpen: true }" x-show="shiftOpen" x-transition.duration.200ms
+             class="shrink-0">
+            <div class="flex items-center gap-2 md:gap-3 px-4 md:px-0 py-2 mb-2 bg-vibe-surface-container rounded-lg text-xs select-none">
+                <div class="flex items-center gap-1.5 min-w-0">
+                    <svg class="w-3.5 h-3.5 shrink-0 text-vibe-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="text-vibe-on-surface-variant font-medium whitespace-nowrap"><?= date('H:i', strtotime($shiftStats['time'])) ?></span>
+                </div>
+
+                <span class="w-px h-4 bg-vibe-outline shrink-0"></span>
+
+                <div class="flex items-center gap-1 min-w-0">
+                    <span class="text-vibe-on-surface-variant hidden sm:inline">Modal</span>
+                    <span class="font-semibold text-vibe-on-surface whitespace-nowrap"><?= number_format($shiftStats['modal'], 0, ',', '.') ?></span>
+                </div>
+
+                <span class="w-px h-4 bg-vibe-outline shrink-0"></span>
+
+                <div class="flex items-center gap-1 min-w-0">
+                    <svg class="w-3.5 h-3.5 shrink-0 text-vibe-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="text-vibe-on-surface-variant hidden sm:inline">Penjualan</span>
+                    <span class="font-bold text-vibe-primary whitespace-nowrap"><?= number_format($shiftStats['net_sales'], 0, ',', '.') ?></span>
+                </div>
+
+                <span class="w-px h-4 bg-vibe-outline shrink-0 hidden sm:block"></span>
+
+                <div class="items-center gap-1 min-w-0 hidden sm:flex">
+                    <span class="text-vibe-on-surface-variant font-medium whitespace-nowrap">Laci</span>
+                    <span class="font-semibold text-vibe-on-surface whitespace-nowrap"><?= number_format($shiftStats['modal'] + $shiftStats['cash_net'], 0, ',', '.') ?></span>
+                </div>
+
+                <span class="w-px h-4 bg-vibe-outline shrink-0 hidden sm:block"></span>
+
+                <div class="items-center gap-1 min-w-0 hidden sm:flex">
+                    <span class="text-vibe-on-surface-variant">Transaksi</span>
+                    <span class="font-bold text-vibe-on-surface"><?= $shiftStats['trx_count'] ?></span>
+                </div>
+
+                <div class="ml-auto flex items-center gap-2">
+                    <a href="riwayat.php" class="text-xs text-vibe-on-surface-variant hover:text-vibe-primary font-medium transition-colors flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                        Tutup Shift
+                    </a>
+                    <button @click="shiftOpen = false" class="p-1 text-vibe-outline-variant hover:text-vibe-on-surface transition-colors" title="Sembunyikan" aria-label="Sembunyikan ringkasan shift">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
             </div>
         </div>
-        
-        <!-- List Pesanan Scrollable -->
-        <div class="flex-1 overflow-y-auto p-6 bg-gray-50/30">
-            <template x-if="pendingOrders.length === 0">
-                <div class="h-full flex flex-col items-center justify-center text-gray-400">
-                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                    <p class="font-medium">No active orders</p>
+        <?php endif; ?>
+
+        <?php if(isset($_SESSION['error'])): ?>
+            <div class="p-4 mb-4 rounded-md bg-vibe-error-container text-vibe-error font-medium flex items-center gap-2 border border-vibe-error/20 text-sm">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Search & Filters -->
+        <div class="mb-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl md:text-2xl font-display font-bold text-vibe-on-surface tracking-tight">Menu</h2>
+                <!-- Desktop cart toggle -->
+                <button @click="showCart = true" class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-vibe-primary text-white text-xs font-bold rounded-md hover:bg-vibe-primary-container transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    Order <span class="bg-white/20 px-1.5 py-0.5 rounded text-white" x-text="cart.reduce((s,i)=>s+i.qty,0) || '0'"></span>
+                </button>
+            </div>
+            <div class="relative mb-3">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-vibe-outline-variant">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+                <input type="text" x-model="searchQuery" placeholder="Cari menu..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors">
+            </div>
+            <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <button @click="selectedCategory = 'all'" 
+                        class="whitespace-nowrap px-3.5 py-2 rounded-lg border text-xs font-bold transition-colors"
+                        :class="selectedCategory === 'all' ? 'bg-vibe-primary border-vibe-primary text-white' : 'bg-white border-vibe-outline-variant text-vibe-on-surface-variant hover:text-vibe-on-surface'">
+                    Semua
+                </button>
+                <?php foreach($categories as $cat): ?>
+                <button @click="selectedCategory = <?= $cat['id'] ?>" 
+                        class="whitespace-nowrap px-3.5 py-2 rounded-lg border text-xs font-bold transition-colors"
+                        :class="selectedCategory === <?= $cat['id'] ?> ? 'bg-vibe-primary border-vibe-primary text-white' : 'bg-white border-vibe-outline-variant text-vibe-on-surface-variant hover:text-vibe-on-surface'">
+                    <?= htmlspecialchars($cat['nama_kategori']) ?>
+                </button>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Stock Info Bar -->
+            <template x-if="menuStockIssues > 0">
+                <div class="flex items-center gap-2 px-3 py-2 mb-3 bg-orange-50 border border-orange-200 rounded-lg text-xs">
+                    <svg class="w-4 h-4 shrink-0 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span class="flex-1 text-orange-800 font-medium"><span x-text="menuStockIssues"></span> menu tidak bisa dipesan — stok bahan habis</span>
+                    <button @click="showStockDetail()" class="text-orange-700 font-bold hover:underline shrink-0">Lihat</button>
                 </div>
             </template>
-            
-            <template x-if="pendingOrders.length > 0">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <template x-for="ord in pendingOrders" :key="ord.id">
-                        <div @click="loadOrder(ord.id)" 
-                             class="group bg-white border border-gray-100 rounded-2xl p-5 cursor-pointer hover:border-theme-sage hover:shadow-lg transition-all duration-300 relative overflow-hidden"
-                             :class="{'ring-2 ring-theme-sage border-theme-sage shadow-md': selectedOrderId === ord.id}">
-                            
-                            <!-- Decorative background blob -->
-                            <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-theme-bg rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
-                            
-                            <div class="flex justify-between items-start mb-4 relative z-10">
-                                <div>
-                                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1" x-text="ord.nomor_pesanan"></div>
-                                    <div class="text-xl font-extrabold text-theme-evergreen" x-text="ord.tipe_pesanan === 'dine_in' ? 'Meja ' + ord.nomor_meja : 'Take Away'"></div>
+        </div>
+        
+        <!-- Menu Grid -->
+        <div class="flex-1 overflow-y-auto rounded-lg pb-2">
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                <template x-for="menu in filteredMenus" :key="menu.id">
+                    <button @click="addToCart(menu)" 
+                            :disabled="menu.status === 'habis' || menu.missing_ingredients > 0"
+                            class="group flex flex-col text-left bg-white border rounded-xl overflow-hidden active:scale-[0.97] transition-all duration-150"
+                            :class="(menu.status === 'habis' || menu.missing_ingredients > 0) ? 'border-vibe-outline-variant/50 opacity-60 cursor-not-allowed' : 'border-vibe-outline-variant hover:border-vibe-on-surface'">
+                        <div class="w-full h-24 md:h-32 bg-vibe-surface-dim relative overflow-hidden">
+                            <template x-if="menu.gambar">
+                                <img :src="'../../assets/images/' + menu.gambar" class="w-full h-full object-cover" alt="">
+                            </template>
+                            <template x-if="!menu.gambar">
+                                <div class="w-full h-full flex items-center justify-center text-vibe-outline-variant">
+                                    <svg class="w-6 h-6 md:w-8 md:h-8 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </div>
-                                <span class="w-3 h-3 rounded-full" :class="ord.status_pesanan === 'selesai' ? 'bg-theme-sage animate-pulse' : 'bg-amber-400'"></span>
-                            </div>
-                            
-                            <div class="text-sm font-medium text-gray-500 mb-4 relative z-10 truncate" x-text="ord.nama_pelanggan || 'Guest'"></div>
-                            
-                            <div class="flex justify-between items-center pt-3 border-t border-gray-50 border-dashed relative z-10">
-                                <div class="font-bold text-theme-leaf text-lg" x-text="formatRupiah(ord.total_harga)"></div>
-                                <div class="text-xs font-semibold px-2 py-1 rounded bg-gray-100 text-gray-500 capitalize" x-text="ord.status_pesanan"></div>
-                            </div>
+                            </template>
+                            <template x-if="menu.status === 'habis'">
+                                <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
+                                    <span class="px-2 py-1 bg-vibe-error text-white text-[9px] font-bold rounded uppercase tracking-wider">Habis</span>
+                                </div>
+                            </template>
+                            <template x-if="menu.missing_ingredients > 0 && menu.status !== 'habis'">
+                                <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
+                                    <span class="px-2 py-1 bg-orange-500 text-white text-[9px] font-bold rounded uppercase tracking-wider">Bahan Habis</span>
+                                </div>
+                            </template>
                         </div>
-                    </template>
+                        <div class="p-2.5 md:p-3">
+                            <div class="text-[9px] md:text-[10px] font-semibold text-vibe-on-surface-variant uppercase tracking-wider mb-0.5" x-text="menu.nama_kategori || 'Uncategorized'"></div>
+                            <h3 class="font-semibold text-xs md:text-sm text-vibe-on-surface mb-1 leading-tight line-clamp-2" x-text="menu.nama_menu"></h3>
+                            <div class="font-bold font-display text-xs md:text-sm text-vibe-primary mt-auto" x-text="formatRupiah(menu.harga)"></div>
+                        </div>
+                    </button>
+                </template>
+            </div>
+            <template x-if="filteredMenus.length === 0">
+                <div class="flex flex-col items-center justify-center h-48 text-vibe-on-surface-variant">
+                    <svg class="w-10 h-10 mb-3 text-vibe-outline-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <p class="font-medium text-sm">Menu tidak ditemukan</p>
                 </div>
             </template>
         </div>
     </div>
 
-    <!-- RIGHT PANEL: Checkout -->
-    <div class="w-full md:w-[400px] flex flex-col bg-white rounded-3xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] overflow-hidden flex-shrink-0 max-h-[calc(100vh-120px)]">
-        
-        <!-- Empty State (Jika belum pilih pesanan) -->
-        <div x-show="!selectedOrder" class="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400">
-            <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-600 mb-1">Select an Order</h3>
-            <p class="text-sm">Choose an active order from the list to process payment.</p>
+    <!-- ==================== MOBILE CART FAB ==================== -->
+    <template x-if="cart.length > 0">
+        <div class="md:hidden fixed bottom-4 left-4 right-4 z-30">
+            <button @click="showCart = true" 
+                    class="w-full flex items-center gap-3 px-4 py-3 bg-vibe-on-surface text-white rounded-xl shadow-lg active:scale-[0.98] transition-transform cart-dot">
+                <div class="relative">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-vibe-error text-white text-[9px] font-bold rounded-full flex items-center justify-center" x-text="cart.reduce((s,i)=>s+i.qty,0)"></span>
+                </div>
+                <div class="flex-1 text-left text-sm font-semibold truncate">
+                    <span x-text="cart.length + ' item' + (cart.length > 1 ? 's' : '')"></span>
+                </div>
+                <div class="text-right font-bold font-display text-base" x-text="formatRupiah(grandTotal)"></div>
+            </button>
+        </div>
+    </template>
+
+    <!-- ==================== CART BACKDROP (mobile) ==================== -->
+    <div class="cart-backdrop md:hidden" :class="showCart ? 'open' : ''" @click="showCart = false"></div>
+
+    <!-- ==================== CHECKOUT CART ==================== -->
+    <div class="cart-panel md:!transform-none md:!relative md:w-[420px] flex flex-col bg-white md:border md:border-vibe-outline-variant md:rounded-xl overflow-hidden md:flex-shrink-0 md:max-h-[calc(100vh-120px)] md:shadow-sm"
+         :class="showCart ? 'open' : ''">
+
+        <!-- Handle drag indicator (mobile) -->
+        <div class="md:hidden flex justify-center pt-2 pb-1">
+            <div class="w-10 h-1 bg-vibe-outline-variant rounded-full"></div>
         </div>
 
-        <!-- Checkout Content -->
-        <template x-if="selectedOrder">
-            <div class="flex flex-col h-full overflow-y-auto animate-[fadeIn_0.3s_ease-out_forwards]">
-                <!-- Header Order Info -->
-                <div class="p-6 bg-theme-evergreen text-white">
-                    <div class="flex justify-between items-center mb-2">
-                        <div class="text-sm text-theme-sage font-medium tracking-wider" x-text="selectedOrder.nomor_pesanan"></div>
-                        <div class="text-xs px-2 py-1 rounded bg-white/10" x-text="formatDate(selectedOrder.waktu_pesan)"></div>
-                    </div>
-                    <div class="text-2xl font-bold" x-text="selectedOrder.tipe_pesanan === 'dine_in' ? 'Table ' + selectedOrder.nomor_meja : 'Take Away'"></div>
-                    <div class="text-sm text-white/70 mt-1 flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        <span x-text="selectedOrder.nama_pelanggan || 'Guest'"></span>
-                    </div>
-                </div>
+        <!-- Header -->
+        <div class="px-4 py-3 border-b border-vibe-outline-variant bg-vibe-surface-dim flex justify-between items-center shrink-0">
+            <h3 class="font-display font-bold text-vibe-on-surface flex items-center gap-2">
+                <svg class="w-5 h-5 text-vibe-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                Pesanan
+            </h3>
+            <div class="flex items-center gap-2">
+                <button @click="clearCart()" x-show="cart.length > 0" class="text-[11px] font-semibold text-vibe-error hover:underline uppercase tracking-wider">Hapus</button>
+                <button @click="showCart = false" class="md:hidden p-1 text-vibe-on-surface-variant hover:text-vibe-on-surface">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
 
-                <!-- Items List -->
-                <div class="flex-1 overflow-y-auto p-6 bg-gray-50/50">
-                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Order Items</h4>
-                    <div class="space-y-4">
-                        <template x-for="item in orderItems" :key="item.id">
-                            <div class="flex justify-between">
-                                <div class="flex gap-3">
-                                    <div class="font-bold text-theme-sage" x-text="item.qty + 'x'"></div>
-                                    <div>
-                                        <div class="font-bold text-theme-evergreen text-sm" x-text="item.nama_menu"></div>
-                                        <div x-show="item.catatan" class="text-xs text-gray-400 mt-0.5 italic" x-text="item.catatan"></div>
-                                    </div>
-                                </div>
-                                <div class="font-bold text-gray-600 text-sm" x-text="formatRupiah(item.harga_satuan * item.qty)"></div>
+        <form action="proses_bayar_langsung.php" method="POST" id="formPOS" class="flex flex-col flex-1 overflow-hidden">
+            <?= csrfField() ?>
+            <input type="hidden" name="cart_data" :value="JSON.stringify(cart)">
+            <input type="hidden" name="tipe_pesanan" :value="orderType">
+            <input type="hidden" name="meja_id" :value="tableId">
+            <input type="hidden" name="nama_pelanggan" :value="customerName">
+            <input type="hidden" name="metode_pembayaran" :value="paymentMethod">
+            <input type="hidden" name="jumlah_bayar" :value="paymentMethod === 'cash' ? amountReceived : grandTotal">
+            <input type="hidden" name="promo_id" :value="appliedPromo ? appliedPromo.id : ''">
+
+            <!-- Customer Details -->
+            <div class="px-4 py-2.5 bg-white border-b border-vibe-outline-variant shrink-0">
+                <div class="flex gap-1 p-0.5 bg-vibe-surface-dim rounded-md mb-2">
+                    <button type="button" @click="orderType = 'dine_in'" class="flex-1 py-1.5 text-xs font-bold rounded transition-all" :class="orderType === 'dine_in' ? 'bg-white text-vibe-on-surface shadow-sm border border-vibe-outline-variant' : 'text-vibe-on-surface-variant'">Makan di Sini</button>
+                    <button type="button" @click="orderType = 'take_away'" class="flex-1 py-1.5 text-xs font-bold rounded transition-all" :class="orderType === 'take_away' ? 'bg-white text-vibe-on-surface shadow-sm border border-vibe-outline-variant' : 'text-vibe-on-surface-variant'">Bungkus</button>
+                </div>
+                <div class="flex gap-2">
+                    <select x-show="orderType === 'dine_in'" x-model="tableId" class="w-1/3 px-2 py-1.5 bg-white border border-vibe-outline-variant rounded-md text-xs font-medium focus:border-vibe-on-surface outline-none">
+                        <option value="">Meja...</option>
+                        <?php foreach($tables as $t): ?>
+                            <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['nomor_meja']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input type="text" x-model="customerName" placeholder="Nama Pelanggan (opsional)" class="flex-1 px-3 py-1.5 bg-white border border-vibe-outline-variant rounded-md text-xs font-medium focus:border-vibe-on-surface outline-none placeholder-vibe-outline-variant">
+                </div>
+            </div>
+
+            <!-- Items List -->
+            <div class="flex-1 overflow-y-auto bg-vibe-surface-dim p-3 md:p-4">
+                <template x-if="cart.length === 0">
+                    <div class="h-full flex flex-col items-center justify-center text-vibe-on-surface-variant">
+                        <svg class="w-10 h-10 mb-3 text-vibe-outline-variant opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                        <p class="text-sm font-medium">Keranjang kosong</p>
+                        <p class="text-[11px] mt-1">Pilih menu di atas</p>
+                    </div>
+                </template>
+                <div class="space-y-2">
+                    <template x-for="(item, index) in cart" :key="item.cartId">
+                        <div class="bg-white border border-vibe-outline-variant rounded-lg p-2.5 flex flex-col gap-2 relative">
+                            <button type="button" @click="removeItem(index)" class="absolute top-1.5 right-1.5 text-vibe-outline-variant hover:text-vibe-error p-1 rounded-md transition-colors z-10">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                            <div class="flex justify-between items-start pr-6">
+                                <div class="font-semibold text-sm text-vibe-on-surface leading-tight" x-text="item.nama_menu"></div>
                             </div>
-                        </template>
-                    </div>
+                            <div class="flex items-center justify-between">
+                                <div class="font-bold text-sm text-vibe-primary" x-text="formatRupiah(item.harga * item.qty)"></div>
+                                <div class="flex items-center border border-vibe-outline-variant rounded-md overflow-hidden bg-vibe-surface-dim h-8">
+                                    <button type="button" @click="decreaseQty(index)" class="w-8 h-full flex items-center justify-center text-vibe-on-surface-variant hover:bg-white hover:text-vibe-on-surface transition-colors font-bold text-base">-</button>
+                                    <div class="w-8 h-full flex items-center justify-center text-sm font-bold bg-white border-x border-vibe-outline-variant" x-text="item.qty"></div>
+                                    <button type="button" @click="increaseQty(index)" class="w-8 h-full flex items-center justify-center text-vibe-on-surface-variant hover:bg-white hover:text-vibe-on-surface transition-colors font-bold text-base">+</button>
+                                </div>
+                            </div>
+                            <input type="text" x-model="item.catatan" placeholder="Catatan (opsional)..." class="w-full text-[10px] px-2 py-1.5 bg-vibe-surface-dim border border-transparent rounded focus:outline-none focus:border-vibe-outline-variant placeholder-vibe-outline-variant transition-colors">
+                        </div>
+                    </template>
                 </div>
+            </div>
 
-                <!-- Payment Section -->
-                <div class="p-6 bg-white border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
+            <!-- Payment Footer -->
+            <div class="p-3 md:p-4 bg-white border-t border-vibe-outline-variant shrink-0">
+                <div class="flex flex-col gap-2.5">
                     
-                    <!-- Promo Code Input -->
-                    <div class="mb-4">
-                        <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Promo Voucher</label>
-                        <div class="flex gap-2">
-                            <input type="text" x-model="promoCode" placeholder="Masukkan kode..." :disabled="appliedPromo"
-                                   style="text-transform: uppercase;"
-                                   class="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-theme-sage font-medium text-sm">
-                            <button type="button" @click="applyPromo()" x-show="!appliedPromo"
-                                    class="px-4 py-2 bg-theme-evergreen text-white font-bold text-sm rounded-lg hover:bg-theme-leaf transition-colors">Terapkan</button>
-                            <button type="button" @click="removePromo()" x-show="appliedPromo"
-                                    class="px-4 py-2 bg-red-50 text-red-600 font-bold text-sm rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
-                        </div>
-                        <p class="text-xs mt-1" :class="promoMessageClass" x-text="promoMessage"></p>
-                    </div>
-
                     <!-- Breakdown -->
-                    <div class="space-y-1.5 mb-4 text-sm border-t border-dashed border-gray-200 pt-4">
-                        <div class="flex justify-between text-gray-500">
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[11px] text-vibe-on-surface-variant font-medium">
                             <span>Subtotal</span>
-                            <span class="font-bold" x-text="formatRupiah(selectedOrder.subtotal)"></span>
+                            <span x-text="formatRupiah(subtotal)"></span>
                         </div>
-                        <div class="flex justify-between text-theme-leaf font-bold" x-show="appliedPromo">
-                            <span>Diskon Promo</span>
-                            <span x-text="'- ' + formatRupiah(calculatedDiscount)"></span>
+                        <div class="flex justify-between text-[11px] text-vibe-secondary font-medium" x-show="appliedPromo">
+                            <span>Diskon</span>
+                            <span x-text="'- ' + formatRupiah(discountAmount)"></span>
                         </div>
-                        <div class="flex justify-between text-gray-500" x-show="selectedOrder.service_persen > 0">
-                            <span x-text="'Service Charge (' + selectedOrder.service_persen + '%)'"></span>
-                            <span class="font-bold" x-text="formatRupiah(calculatedService)"></span>
+                        <div class="flex justify-between text-[11px] text-vibe-on-surface-variant font-medium">
+                            <span>Pajak & Service</span>
+                            <span x-text="formatRupiah(serviceAmount + taxAmount)"></span>
                         </div>
-                        <div class="flex justify-between text-gray-500" x-show="selectedOrder.pajak_persen > 0">
-                            <span x-text="'PB1 Tax (' + selectedOrder.pajak_persen + '%)'"></span>
-                            <span class="font-bold" x-text="formatRupiah(calculatedTax)"></span>
+                        <div class="flex justify-between items-end pt-1 mt-1 border-t border-vibe-outline-variant">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-vibe-on-surface">Total</span>
+                            <span class="text-lg md:text-xl font-display font-bold text-vibe-on-surface tracking-tight leading-none" x-text="formatRupiah(grandTotal)"></span>
                         </div>
                     </div>
 
-                    <div class="flex justify-between items-center mb-6 border-t border-gray-100 pt-4">
-                        <span class="text-gray-500 font-bold uppercase tracking-wider text-xs">Grand Total</span>
-                        <span class="text-3xl font-extrabold text-theme-evergreen" x-text="formatRupiah(calculatedGrandTotal)"></span>
+                    <!-- Promo -->
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <input type="text" x-model="promoCode" placeholder="Kode promo" :disabled="appliedPromo"
+                                   style="text-transform: uppercase;"
+                                   class="w-full px-2.5 py-1.5 bg-vibe-surface-dim border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-on-surface font-semibold text-[11px] pr-10">
+                            <button type="button" @click="applyPromo()" x-show="!appliedPromo"
+                                    class="absolute right-1 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-vibe-on-surface text-white text-[10px] font-bold rounded">Pakai</button>
+                            <button type="button" @click="removePromo()" x-show="appliedPromo"
+                                    class="absolute right-1 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-vibe-error-container text-vibe-error text-[10px] font-bold rounded">Batal</button>
+                        </div>
                     </div>
+                    <p class="text-[10px] font-semibold text-right -mt-1.5" :class="promoMessageClass" x-text="promoMessage"></p>
 
                     <!-- Payment Methods -->
-                    <div class="grid grid-cols-3 gap-3 mb-6">
-                        <button @click="setPaymentMethod('cash')" 
-                                class="py-3 px-2 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all"
-                                :class="paymentMethod === 'cash' ? 'border-theme-sage bg-theme-bg text-theme-leaf' : 'border-gray-100 text-gray-500 hover:border-gray-200 hover:bg-gray-50'">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            <span class="text-xs font-bold">Cash</span>
-                        </button>
-                        <button @click="setPaymentMethod('qris')" 
-                                class="py-3 px-2 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all"
-                                :class="paymentMethod === 'qris' ? 'border-theme-sage bg-theme-bg text-theme-leaf' : 'border-gray-100 text-gray-500 hover:border-gray-200 hover:bg-gray-50'">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
-                            <span class="text-xs font-bold">QRIS</span>
-                        </button>
-                        <button @click="setPaymentMethod('debit')" 
-                                class="py-3 px-2 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all"
-                                :class="paymentMethod === 'debit' ? 'border-theme-sage bg-theme-bg text-theme-leaf' : 'border-gray-100 text-gray-500 hover:border-gray-200 hover:bg-gray-50'">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                            <span class="text-xs font-bold">Debit</span>
-                        </button>
+                    <div class="flex gap-2">
+                        <template x-for="m in methods">
+                            <button type="button" @click="setPaymentMethod(m.id)" 
+                                    class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-[11px] font-bold transition-colors"
+                                    :class="paymentMethod === m.id ? 'border-vibe-on-surface bg-vibe-on-surface text-white' : 'border-vibe-outline-variant bg-white text-vibe-on-surface-variant hover:border-vibe-on-surface'">
+                                <span x-html="m.icon"></span>
+                                <span x-text="m.label"></span>
+                            </button>
+                        </template>
                     </div>
 
                     <!-- Cash Input -->
-                    <div x-show="paymentMethod === 'cash'" x-collapse>
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-gray-400 mb-1">Amount Received</label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">Rp</span>
-                                <input type="number" x-model.number="amountReceived" class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-theme-sage font-bold text-theme-evergreen">
+                    <div x-show="paymentMethod === 'cash'">
+                        <div class="bg-vibe-surface-dim p-2 rounded-lg border border-vibe-outline-variant space-y-2">
+                            <div class="flex gap-1.5 items-center">
+                                <div class="relative flex-1">
+                                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-vibe-on-surface-variant font-semibold text-xs">Rp</span>
+                                    <input type="number" x-model.number="amountReceived" class="w-full pl-7 pr-2 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-on-surface font-semibold text-vibe-on-surface text-sm">
+                                </div>
+                                <button type="button" @click="amountReceived = grandTotal" class="px-2.5 py-2 bg-vibe-on-surface text-white rounded-md text-[10px] font-bold transition-colors shrink-0 active:scale-[0.98]">Pas</button>
                             </div>
-                            
-                            <!-- Quick Cash Buttons -->
-                            <div class="grid grid-cols-3 gap-2 mt-2">
-                                <button type="button" @click="amountReceived = calculatedGrandTotal" class="py-1.5 px-2 bg-gray-100 hover:bg-theme-bg hover:text-theme-leaf border border-transparent hover:border-theme-sage/30 rounded-lg text-xs font-bold text-gray-600 transition-colors">
-                                    Uang Pas
-                                </button>
+                            <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
+                                <span class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-wider shrink-0">Cepat</span>
                                 <template x-for="amount in getQuickCashOptions()" :key="amount">
                                     <button type="button" @click="amountReceived = amount" 
-                                            class="py-1.5 px-2 bg-gray-100 hover:bg-theme-bg hover:text-theme-leaf border border-transparent hover:border-theme-sage/30 rounded-lg text-xs font-bold text-gray-600 transition-colors"
-                                            x-text="formatRupiah(amount).replace('Rp ', '')">
+                                            class="px-2.5 py-1.5 bg-white border border-vibe-outline-variant hover:border-vibe-on-surface rounded-md text-[10px] font-bold text-vibe-on-surface transition-colors shrink-0 active:scale-[0.98]"
+                                            :class="amountReceived === amount ? 'border-vibe-on-surface bg-vibe-primary-light' : ''"
+                                            x-text="quickCashLabel(amount)">
                                     </button>
                                 </template>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center mb-6 p-3 rounded-lg" :class="changeAmount >= 0 ? 'bg-theme-bg text-theme-leaf' : 'bg-red-50 text-red-500'">
-                            <span class="font-bold text-sm">Change</span>
-                            <span class="font-extrabold" x-text="formatRupiah(Math.max(0, changeAmount))"></span>
+                        <div class="flex justify-between items-center px-1 pt-1.5">
+                            <span class="text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-widest" :class="changeAmount < 0 ? 'text-vibe-error' : ''">Kembali</span>
+                            <span class="text-sm font-bold" :class="changeAmount < 0 ? 'text-vibe-error' : 'text-vibe-secondary'" x-text="formatRupiah(Math.max(0, changeAmount))"></span>
                         </div>
                     </div>
 
-                    <form action="proses_bayar.php" method="POST" id="formPayment">
-                        <input type="hidden" name="pesanan_id" :value="selectedOrder.id">
-                        <input type="hidden" name="metode_pembayaran" :value="paymentMethod">
-                        <input type="hidden" name="jumlah_bayar" :value="paymentMethod === 'cash' ? amountReceived : calculatedGrandTotal">
-                        <input type="hidden" name="promo_id" :value="appliedPromo ? appliedPromo.id : ''">
-                        
-                        <button type="button" @click="processPayment()" 
-                                :disabled="!isPaymentValid()"
-                                class="w-full py-4 rounded-2xl font-bold text-lg transition-all flex justify-center items-center gap-2"
-                                :class="isPaymentValid() ? 'bg-theme-sage text-white hover:bg-theme-leaf shadow-lg shadow-theme-sage/30' : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
-                            <span>Pay</span>
-                            <span x-text="formatRupiah(calculatedGrandTotal)"></span>
-                            <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                        </button>
-                    </form>
+                    <div x-show="paymentIssue" x-transition.opacity.duration.150ms class="flex items-start gap-2 rounded-lg border border-vibe-outline-variant bg-vibe-surface-dim px-3 py-2">
+                        <div class="w-5 h-5 rounded-full bg-white border border-vibe-outline-variant flex items-center justify-center shrink-0 mt-0.5">
+                            <svg class="w-3.5 h-3.5 text-vibe-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold text-vibe-on-surface" x-text="paymentIssue ? paymentIssue.title : ''"></div>
+                            <div class="text-[11px] text-vibe-on-surface-variant leading-snug" x-text="paymentIssue ? paymentIssue.detail : ''"></div>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" 
+                            :disabled="!isValidOrder()"
+                            class="w-full py-3.5 rounded-xl font-bold text-sm transition-all flex justify-center items-center gap-2"
+                            :class="isValidOrder() ? 'bg-vibe-primary text-white hover:bg-vibe-primary-container shadow-md active:scale-[0.98]' : 'bg-vibe-surface-high text-vibe-on-surface-variant cursor-not-allowed border border-vibe-outline-variant'">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span>BAYAR <span x-text="formatRupiah(grandTotal)"></span></span>
+                    </button>
                 </div>
             </div>
-        </template>
+        </form>
     </div>
 
 </div>
 
 <script>
 document.addEventListener('alpine:init', () => {
-    Alpine.data('cashierApp', () => ({
-        pendingOrders: <?= json_encode($pendingOrders) ?>,
-        selectedOrderId: null,
-        selectedOrder: null,
-        orderItems: [],
-        paymentMethod: null,
+    Alpine.data('posApp', () => ({
+        // ── Menu ──
+        menus: <?= json_encode($menus) ?>,
+        searchQuery: '',
+        selectedCategory: 'all',
+        
+        // ── Cart ──
+        cart: [],
+        showCart: false,
+        
+        // ── Order ──
+        orderType: 'dine_in',
+        tableId: '',
+        customerName: '',
+        
+        // ── Payment ──
+        paymentMethod: 'cash',
         amountReceived: 0,
         
+        // ── Promo ──
         promoCode: '',
         appliedPromo: null,
         promoMessage: '',
         promoMessageClass: '',
-        pollTimer: null,
+
+        // Payment methods config
+        methods: [
+            { id: 'cash', label: 'Tunai', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>' },
+            { id: 'qris', label: 'QRIS', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>' },
+            { id: 'debit', label: 'Debit', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>' },
+        ],
+
+        // ── Low stock details (menu_id -> [{nama, stok, butuh, satuan}]) ──
+        lowStockDetails: <?= json_encode($lowStockDetails) ?>,
 
         init() {
-            this.startPolling();
+            window.restockBahan = (id, nama) => this.restockBahan(id, nama);
         },
 
-        async fetchOrders() {
-            try {
-                const res = await fetch('index.php?get_orders=1');
-                if (!res.ok) return;
-                const data = await res.json();
-                this.pendingOrders = data.orders;
-            } catch (err) {
-                console.error('Fetch orders error:', err);
+        // ── Constants from DB ──
+        SERVICE_PERCENT: <?= $service_persen_db ?>,
+        SERVICE_ACTIVE: <?= $service_aktif ? 'true' : 'false' ?>,
+        TAX_PERCENT: <?= $pajak_persen_db ?>,
+        TAX_ACTIVE: <?= $pajak_aktif ? 'true' : 'false' ?>,
+
+        // ── Computed ──
+        get filteredMenus() {
+            let f = this.menus;
+            if (this.selectedCategory !== 'all') f = f.filter(m => m.kategori_id == this.selectedCategory);
+            const q = this.searchQuery.trim().toLowerCase();
+            if (q) f = f.filter(m => m.nama_menu.toLowerCase().includes(q));
+            return f;
+        },
+        get menuStockIssues() {
+            return this.menus.filter(m => m.missing_ingredients > 0).length;
+        },
+
+        // ── Cart actions ──
+        addToCart(menu) {
+            if (menu.missing_ingredients > 0) {
+                const bahan = this.lowStockDetails[menu.id] || [];
+                let rows = bahan.map(b => `
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 pr-3 text-sm font-semibold text-gray-800">${b.nama}</td>
+                        <td class="py-2 pr-3 text-sm text-right font-bold" style="color:#dc2626">${b.stok}</td>
+                        <td class="py-2 pr-3 text-sm text-right text-gray-500">${b.butuh}</td>
+                        <td class="py-2 text-sm text-gray-400">${b.satuan}</td>
+                    </tr>
+                `).join('');
+                Swal.fire({
+                    icon: 'warning',
+                    title: '<span class="text-base font-bold" style="font-family:Outfit,sans-serif">Stok Bahan Tidak Cukup</span>',
+                    html: `
+                        <div class="text-left" style="font-family:Inter,sans-serif">
+                            <p class="text-sm text-gray-600 mb-3 font-medium">Menu <span class="font-bold text-gray-900">${menu.nama_menu}</span> tidak bisa dipesan karena bahan berikut habis:</p>
+                            <table class="w-full text-xs">
+                                <thead>
+                                    <tr class="border-b border-gray-200 text-gray-400 uppercase tracking-wider text-[10px]">
+                                        <th class="pb-1.5 pr-3 text-left font-semibold">Bahan</th>
+                                        <th class="pb-1.5 pr-3 text-right font-semibold">Stok</th>
+                                        <th class="pb-1.5 pr-3 text-right font-semibold">Butuh</th>
+                                        <th class="pb-1.5 text-left font-semibold">Satuan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                            <p class="text-[11px] text-gray-400 mt-3">Isi ulang bahan di inventaris agar menu tersedia kembali.</p>
+                        </div>
+                    `,
+                    confirmButtonColor: '#0F172A',
+                    confirmButtonText: 'Mengerti',
+                    customClass: { popup: 'rounded-xl' }
+                });
+                return;
+            }
+            const i = this.cart.findIndex(item => item.id === menu.id && !item.catatan);
+            if (i > -1) { this.cart[i].qty++; }
+            else {
+                this.cart.push({
+                    cartId: Date.now() + Math.random(),
+                    id: menu.id,
+                    nama_menu: menu.nama_menu,
+                    harga: parseFloat(menu.harga),
+                    qty: 1,
+                    catatan: ''
+                });
+            }
+            this.syncAmount();
+        },
+        increaseQty(i) { this.cart[i].qty++; this.syncAmount(); },
+        decreaseQty(i) {
+            if (this.cart[i].qty > 1) this.cart[i].qty--;
+            else this.cart.splice(i, 1);
+            this.syncAmount();
+        },
+        removeItem(i) { this.cart.splice(i, 1); this.syncAmount(); },
+        clearCart() {
+            if (!confirm('Hapus semua item?')) return;
+            this.cart = [];
+            this.removePromo();
+            this.syncAmount();
+        },
+        syncAmount() {
+            if (this.paymentMethod !== 'cash' || this.amountReceived < this.grandTotal) {
+                this.amountReceived = this.grandTotal;
             }
         },
 
-        startPolling() {
-            this.pollTimer = setInterval(() => this.fetchOrders(), 5000);
-        },
+        // ── Kalkulasi ──
+        get subtotal() { return this.cart.reduce((s, i) => s + (i.harga * i.qty), 0); },
+        get discountAmount() { return this.appliedPromo ? parseFloat(this.appliedPromo.diskon_nominal) || 0 : 0; },
+        get subtotalBersih() { return Math.max(0, this.subtotal - this.discountAmount); },
+        get serviceAmount() { return this.SERVICE_ACTIVE ? Math.round((this.subtotalBersih * this.SERVICE_PERCENT) / 100 / 100) * 100 : 0; },
+        get taxAmount() { return this.TAX_ACTIVE ? Math.round(((this.subtotalBersih + this.serviceAmount) * this.TAX_PERCENT) / 100 / 100) * 100 : 0; },
+        get grandTotal() { return this.subtotalBersih + this.serviceAmount + this.taxAmount; },
 
-        async loadOrder(id) {
-            this.selectedOrderId = id;
-            this.paymentMethod = null;
-            this.removePromo();
-            
-            try {
-                const response = await fetch(`index.php?get_order_details=1&order_id=${id}`);
-                const data = await response.json();
-                this.selectedOrder = data.order;
-                this.orderItems = data.items;
-                this.amountReceived = parseFloat(data.order.total_harga);
-            } catch (err) { console.error(err); }
-        },
-        
-        get calculatedDiscount() {
-            if (!this.appliedPromo || !this.selectedOrder) return 0;
-            return parseFloat(this.appliedPromo.diskon_nominal);
-        },
-        
-        get calculatedService() {
-            if (!this.selectedOrder) return 0;
-            const subtotalBersih = parseFloat(this.selectedOrder.subtotal) - this.calculatedDiscount;
-            return (subtotalBersih * parseFloat(this.selectedOrder.service_persen)) / 100;
-        },
-        
-        get calculatedTax() {
-            if (!this.selectedOrder) return 0;
-            const subtotalBersih = parseFloat(this.selectedOrder.subtotal) - this.calculatedDiscount;
-            return ((subtotalBersih + this.calculatedService) * parseFloat(this.selectedOrder.pajak_persen)) / 100;
-        },
-        
-        get calculatedGrandTotal() {
-            if (!this.selectedOrder) return 0;
-            const subtotalBersih = parseFloat(this.selectedOrder.subtotal) - this.calculatedDiscount;
-            return subtotalBersih + this.calculatedService + this.calculatedTax;
-        },
-
+        // ── Promo ──
         async applyPromo() {
-            if (!this.promoCode.trim()) return;
-            
-            this.promoMessage = 'Memvalidasi...';
-            this.promoMessageClass = 'text-gray-500';
-            
+            if (!this.promoCode.trim() || this.subtotal === 0) return;
+            this.promoMessage = 'Cek...';
+            this.promoMessageClass = 'text-vibe-on-surface-variant';
             try {
                 const fd = new FormData();
+                fd.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
                 fd.append('kode_promo', this.promoCode);
-                fd.append('subtotal', this.selectedOrder.subtotal);
-                
+                fd.append('subtotal', this.subtotal);
                 const res = await fetch('../../api/cek_promo.php', { method: 'POST', body: fd });
                 const data = await res.json();
-                
                 if (data.success) {
-                    this.appliedPromo = {
-                        id: data.promo_id,
-                        diskon_nominal: data.diskon_nominal
-                    };
+                    this.appliedPromo = { id: data.promo_id, diskon_nominal: data.diskon_nominal };
                     this.promoMessage = data.message;
-                    this.promoMessageClass = 'text-theme-leaf';
-                    this.amountReceived = this.calculatedGrandTotal;
+                    this.promoMessageClass = 'text-vibe-primary';
+                    this.syncAmount();
                 } else {
                     this.promoMessage = data.message;
-                    this.promoMessageClass = 'text-red-500';
+                    this.promoMessageClass = 'text-vibe-error';
                 }
-            } catch (err) {
-                this.promoMessage = 'Terjadi kesalahan jaringan.';
-                this.promoMessageClass = 'text-red-500';
-            }
+            } catch (e) { this.promoMessage = 'Gagal hubungi server.'; this.promoMessageClass = 'text-vibe-error'; }
         },
-
         removePromo() {
             this.appliedPromo = null;
             this.promoCode = '';
             this.promoMessage = '';
-            if(this.selectedOrder) this.amountReceived = this.calculatedGrandTotal;
+            this.syncAmount();
         },
-        
-        setPaymentMethod(method) {
-            this.paymentMethod = method;
-            if (method !== 'cash') {
-                this.amountReceived = this.calculatedGrandTotal;
-            }
+
+        // ── Stock detail modal ──
+        showStockDetail() {
+            const menus = this.menus.filter(m => m.missing_ingredients > 0);
+            let items = menus.map(m => {
+                const bahan = this.lowStockDetails[m.id] || [];
+                const rows = bahan.map(b => `
+                    <div class="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                        <div>
+                            <span class="text-sm font-semibold text-gray-800">${b.nama}</span>
+                            <span class="text-[11px] text-gray-400 ml-1">${b.satuan}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="text-right">
+                                <span class="text-sm font-bold" style="color:#dc2626">${b.stok}</span>
+                                <span class="text-[11px] text-gray-400 ml-1">/ ${b.butuh}</span>
+                            </div>
+                            <button onclick="window.restockBahan(${b.id}, '${b.nama.replace(/'/g, "\\'")}')"
+                                    class="px-2 py-0.5 bg-white border border-gray-200 hover:border-vibe-primary rounded text-[10px] font-bold text-vibe-primary transition-colors">
+                                +5
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                return `
+                    <div class="mb-4 pb-3 border-b border-gray-100 last:border-0 last:mb-0 last:pb-0">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-sm font-bold text-gray-900">${m.nama_menu}</span>
+                            <span class="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded">${bahan.length} bahan</span>
+                        </div>
+                        ${rows}
+                    </div>
+                `;
+            }).join('');
+            Swal.fire({
+                icon: 'warning',
+                title: '<span class="text-base font-bold" style="font-family:Outfit,sans-serif">Stok Bahan Habis</span>',
+                html: `
+                    <div class="text-left max-h-80 overflow-y-auto" style="font-family:Inter,sans-serif">
+                        <p class="text-sm text-gray-500 mb-4 font-medium">Menu berikut tidak bisa dipesan — stok bahan tidak mencukupi:</p>
+                        ${items}
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-100 text-[10px] text-gray-400">Klik +5 untuk restock cepat per bahan</div>
+                `,
+                confirmButtonColor: '#0F172A',
+                confirmButtonText: 'Tutup',
+                customClass: { popup: 'rounded-xl' }
+            });
         },
-        
-        get changeAmount() {
-            if (!this.selectedOrder || this.paymentMethod !== 'cash') return 0;
-            return this.amountReceived - this.calculatedGrandTotal;
-        },
-        
-        isPaymentValid() {
-            if (!this.paymentMethod) return false;
-            if (this.paymentMethod === 'cash') {
-                return this.amountReceived >= this.calculatedGrandTotal;
-            }
-            return true;
-        },
-        
-        processPayment() {
-            if(this.isPaymentValid()) {
-                document.getElementById('formPayment').submit();
-            }
-        },
-        
-        formatRupiah(angka) {
-            if (!angka) return 'Rp 0';
-            return 'Rp ' + parseInt(angka).toLocaleString('id-ID');
-        },
-        
-        formatDate(dateStr) {
-            if (!dateStr) return '';
-            const d = new Date(dateStr);
-            return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        },
-        
-        getQuickCashOptions() {
-            const total = this.calculatedGrandTotal;
-            if (total <= 0) return [];
-            
-            let options = [];
-            
-            // Base denominations in IDR
-            const denoms = [20000, 50000, 100000, 150000, 200000, 300000, 500000];
-            
-            // Find the next logical denominations greater than total
-            for (let d of denoms) {
-                if (d > total) {
-                    options.push(d);
-                    if (options.length >= 2) break;
+
+        // ── Restock Cepat ──
+        async restockBahan(bahanId, bahanNama) {
+            try {
+                const fd = new FormData();
+                const token = document.querySelector('input[name="csrf_token"]');
+                if (token) fd.append('csrf_token', token.value);
+                fd.append('bahan_id', bahanId);
+
+                const res = await fetch('proses_restock_cepat.php', { method: 'POST', body: fd });
+                const data = await res.json();
+
+                if (data.success) {
+                    // Update stok di lowStockDetails
+                    for (const menuId in this.lowStockDetails) {
+                        const arr = this.lowStockDetails[menuId];
+                        for (let i = 0; i < arr.length; i++) {
+                            if (arr[i].id === bahanId) {
+                                arr[i].stok += 5;
+                                break;
+                            }
+                        }
+                    }
+                    // Re-hitung missing_ingredients per menu
+                    this.menus.forEach(m => {
+                        const bahanList = this.lowStockDetails[m.id] || [];
+                        m.missing_ingredients = bahanList.filter(b => b.stok < b.butuh).length;
+                    });
+                    // Tutup modal lama, buka ulang
+                    Swal.close();
+                    setTimeout(() => { if (this.menuStockIssues > 0) this.showStockDetail(); }, 100);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: data.message,
+                        confirmButtonColor: '#0F172A',
+                        customClass: { popup: 'rounded-xl' }
+                    });
                 }
+            } catch (e) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'Gagal hubungi server.',
+                    confirmButtonColor: '#0F172A',
+                    customClass: { popup: 'rounded-xl' }
+                });
             }
-            
-            // If total is very large (e.g. 1.2M), add rounded up to next 50k/100k
-            if (options.length === 0) {
-                options.push(Math.ceil(total / 50000) * 50000);
-                options.push(Math.ceil(total / 100000) * 100000);
+        },
+
+        // ── Payment ──
+        setPaymentMethod(m) { this.paymentMethod = m; this.syncAmount(); },
+        get changeAmount() { return this.paymentMethod === 'cash' ? this.amountReceived - this.grandTotal : 0; },
+        getQuickCashOptions() {
+            const t = this.grandTotal;
+            if (t <= 0) return [];
+            const ceil5k = Math.ceil(t / 5000) * 5000;
+            const ceil10k = Math.ceil(t / 10000) * 10000;
+            const ceil20k = Math.ceil(t / 20000) * 20000;
+            const denoms = [50000, 100000, 200000];
+            let opts = [ceil5k];
+            if (ceil10k > ceil5k) opts.push(ceil10k);
+            if (ceil20k > ceil10k) opts.push(ceil20k);
+            denoms.forEach(d => { if (d > t && !opts.includes(d)) opts.push(d); });
+            return opts.filter((v, i, a) => a.indexOf(v) === i && v > t).slice(0, 4);
+        },
+        quickCashLabel(amount) {
+            return amount >= 1000 ? (amount / 1000).toLocaleString('id-ID') + 'rb' : this.formatRupiah(amount);
+        },
+        get paymentIssue() {
+            if (!this.cart.length) {
+                return { title: 'Keranjang masih kosong', detail: 'Pilih menu dulu, lalu pembayaran bisa diproses.' };
             }
-            
-            // Remove duplicates
-            return [...new Set(options)].slice(0, 2);
-        }
+            if (this.orderType === 'dine_in' && !this.tableId) {
+                return { title: 'Meja belum dipilih', detail: 'Pesanan makan di sini butuh nomor meja.' };
+            }
+            if (this.paymentMethod === 'cash' && this.amountReceived < this.grandTotal) {
+                return { title: 'Uang tunai kurang', detail: 'Kurang ' + this.formatRupiah(this.grandTotal - this.amountReceived) + ' dari total tagihan.' };
+            }
+            return null;
+        },
+        isValidOrder() {
+            return !this.paymentIssue;
+        },
+        formatRupiah(a) { return a ? 'Rp ' + Math.round(a).toLocaleString('id-ID') : 'Rp 0'; }
     }));
 });
 </script>

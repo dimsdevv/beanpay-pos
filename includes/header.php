@@ -8,99 +8,99 @@ require_once __DIR__ . '/helpers.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BeanPay - <?= $page_title ?? 'POS System' ?></title>
+    <meta name="theme-color" content="#0F172A">
+    <link rel="manifest" href="<?= BASE_URL ?>/manifest.json">
+    <title>Checkpoint POS — <?= $page_title ?? 'POS System' ?></title>
     
-    <!-- Google Fonts: Plus Jakarta Sans -->
+    <!-- Local Vendor Assets (Offline-first) -->
+    <script src="<?= BASE_URL ?>/assets/vendor/tailwind.min.js"></script>
+    <script defer src="<?= BASE_URL ?>/assets/vendor/alpine.min.js"></script>
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/sweetalert2.min.css">
+    <script src="<?= BASE_URL ?>/assets/vendor/sweetalert2.min.js"></script>
+    
+    <!-- Google Fonts: Inter & Outfit (fallback ke system sans-serif jika offline) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS (CDN for Development) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- Tailwind Config: VibePOS Design System -->
+    <!-- Tailwind Config: Swiss Minimal Design System -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
                     },
                     colors: {
                         vibe: {
-                            // Primary: Electric Blue
-                            'primary': '#004ac6',
-                            'primary-container': '#2563eb',
-                            'primary-light': '#dbe1ff',
-                            'primary-dim': '#b4c5ff',
-                            'on-primary': '#ffffff',
+                            // Primary: Muted Cobalt / Deep Graphite
+                            'primary': '#0F172A',
+                            'primary-container': '#1E293B',
+                            'primary-light': '#F8FAFC',
+                            'primary-dim': '#E2E8F0',
+                            'on-primary': '#FFFFFF',
 
-                            // Secondary: Emerald Green
-                            'secondary': '#006c49',
-                            'secondary-container': '#6cf8bb',
-                            'on-secondary': '#ffffff',
+                            // Secondary: Muted Teal/Emerald
+                            'secondary': '#0F766E',
+                            'secondary-container': '#CCFBF1',
+                            'on-secondary': '#FFFFFF',
 
-                            // Tertiary: Vivid Purple
-                            'tertiary': '#632ecd',
-                            'tertiary-container': '#7d4ce7',
-                            'tertiary-light': '#e9ddff',
-                            'on-tertiary': '#ffffff',
+                            // Tertiary: Slate
+                            'tertiary': '#334155',
+                            'tertiary-container': '#475569',
+                            'tertiary-light': '#F1F5F9',
+                            'on-tertiary': '#FFFFFF',
 
                             // Error / Danger
-                            'error': '#ba1a1a',
-                            'error-container': '#ffdad6',
+                            'error': '#DC2626',
+                            'error-container': '#FEE2E2',
 
-                            // Accent: Warm Orange (for alerts/pending)
-                            'accent': '#e67e22',
-                            'accent-light': '#fef3c7',
+                            // Accent: Muted Orange
+                            'accent': '#D97706',
+                            'accent-light': '#FEF3C7',
 
                             // Surfaces & Neutrals
-                            'bg': '#f8f9ff',
-                            'surface': '#ffffff',
-                            'surface-dim': '#cbdbf5',
-                            'surface-container': '#e5eeff',
-                            'surface-high': '#dce9ff',
-                            'on-surface': '#0b1c30',
-                            'on-surface-variant': '#434655',
-                            'outline': '#737686',
-                            'outline-variant': '#c3c6d7',
-                            'inverse-surface': '#213145',
-                            'inverse-on-surface': '#eaf1ff',
+                            'bg': '#FFFFFF',
+                            'surface': '#FFFFFF',
+                            'surface-dim': '#F8FAFC',
+                            'surface-container': '#F1F5F9',
+                            'surface-high': '#E2E8F0',
+                            'on-surface': '#020617', // Extremely dark charcoal ink
+                            'on-surface-variant': '#475569', // Muted text
+                            'outline': '#E2E8F0', // Hairline borders
+                            'outline-variant': '#CBD5E1',
+                            'inverse-surface': '#0F172A',
+                            'inverse-on-surface': '#F8FAFC',
                         },
-                        // Backward-compatible aliases (theme-* → vibe-* mapping)
+                        // Backward-compatible aliases
                         theme: {
-                            'evergreen': '#0b1c30',    // → vibe-on-surface
-                            'leaf': '#006c49',         // → vibe-secondary
-                            'sage': '#004ac6',         // → vibe-primary (used for accents)
-                            'muted-olive': '#e5eeff',  // → vibe-surface-container
-                            'olive': '#434655',        // → vibe-on-surface-variant
-                            'bg': '#f8f9ff',           // → vibe-bg
-                            'ocean': '#004ac6',        // → vibe-primary
-                            'ocean-light': '#2563eb',  // → vibe-primary-container
-                            'coral': '#ba1a1a',        // → vibe-error
-                            'coral-light': '#ffdad6',  // → vibe-error-container
-                            'sun': '#e67e22',          // → vibe-accent
-                            'sun-light': '#fef3c7',    // → vibe-accent-light
-                            'twilight': '#632ecd',     // → vibe-tertiary
+                            'evergreen': '#020617',
+                            'leaf': '#0F766E',
+                            'sage': '#0F172A',
+                            'muted-olive': '#F1F5F9',
+                            'olive': '#475569',
+                            'bg': '#FFFFFF',
+                            'ocean': '#0F172A',
+                            'ocean-light': '#1E293B',
+                            'coral': '#DC2626',
+                            'coral-light': '#FEE2E2',
+                            'sun': '#D97706',
+                            'sun-light': '#FEF3C7',
+                            'twilight': '#334155',
                         }
                     },
                     boxShadow: {
-                        'card': '0 4px 20px rgba(0, 0, 0, 0.05)',
-                        'card-hover': '0 8px 30px rgba(0, 0, 0, 0.08)',
-                        'elevated': '0 8px 24px rgba(0, 0, 0, 0.1)',
+                        'card': 'none',
+                        'card-hover': 'none',
+                        'elevated': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
                     },
                     borderRadius: {
-                        'sm': '0.25rem',
-                        'DEFAULT': '0.5rem',
-                        'md': '0.75rem',
-                        'lg': '1rem',
-                        'xl': '1.5rem',
+                        'sm': '0.125rem',
+                        'DEFAULT': '0.25rem',
+                        'md': '0.375rem',
+                        'lg': '0.5rem',
+                        'xl': '0.5rem', // Capped at 8px to prevent "insanely rounded" AI look
                     }
                 }
             }
@@ -108,34 +108,32 @@ require_once __DIR__ . '/helpers.php';
     </script>
     
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .font-display { font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; }
         
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        /* Custom scrollbar - ultra minimal */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(195, 198, 215, 0.5); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(115, 118, 134, 0.6); }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
-        /* Hover Lift Animation */
+        /* Minimal Interaction Animations */
         .hover-lift {
-            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+            transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease;
         }
         .hover-lift:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 20px -8px rgba(0,0,0,0.12);
+            transform: scale(1.02);
+            /* Shadow removed for flat aesthetic */
         }
 
         /* Smooth fade-in animation */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         .animate-fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
+            animation: fadeIn 0.2s ease-out forwards;
         }
-
-        /* Backward compat: Glass utility (now solid white) */
-        .glass { background: rgba(255,255,255,0.98); }
 
         /* Hide scrollbar utility */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -143,6 +141,22 @@ require_once __DIR__ . '/helpers.php';
 
         /* Line clamp */
         .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        /* Global Reset for Swiss Design */
+        * {
+            box-shadow: none !important; /* Force remove all decorative box shadows */
+        }
+        .shadow-elevated {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+        }
     </style>
+<?php if (!isset($noPwa)): ?>
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('<?= BASE_URL ?>/service-worker.js');
+}
+</script>
+<?php endif; ?>
 </head>
-<body class="text-vibe-on-surface h-screen flex overflow-hidden bg-vibe-bg" x-data="{ sidebarOpen: false }">
+<body class="text-vibe-on-surface h-screen flex overflow-hidden bg-vibe-bg antialiased" x-data="{ sidebarOpen: false }">
+

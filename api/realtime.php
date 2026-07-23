@@ -1,6 +1,6 @@
 <?php
 /**
- * BeanPay Real-Time API Endpoint
+ * Checkpoint POS Real-Time API Endpoint
  * 
  * GET /api/realtime.php?last_id=0
  * 

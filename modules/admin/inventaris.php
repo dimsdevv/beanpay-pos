@@ -4,6 +4,9 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/helpers.php';
 
+requireRole(['admin']);
+requireCsrfToken();
+
 // Handle aksi CRUD
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -72,7 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception("Proteksi Aktif: Bahan ini tidak bisa dihapus karena sedang digunakan dalam resep '$menuDipakai'.");
             }
             
+            $stmtBahan = $pdo->prepare("SELECT nama_bahan FROM bahan_baku WHERE id = ?");
+            $stmtBahan->execute([$id]);
+            $namaBahan = $stmtBahan->fetchColumn();
             $pdo->prepare("DELETE FROM bahan_baku WHERE id = ?")->execute([$id]);
+            logAuditAction('delete_bahan', 'bahan_baku', $id, $namaBahan ? "Bahan: $namaBahan" : null);
             $_SESSION['success'] = "Bahan baku berhasil dihapus.";
         }
     } catch (Exception $e) {
@@ -83,7 +90,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Sekarang baru aman load header (output HTML)
-requireRole(['admin']);
 
 require_once __DIR__ . '/../../includes/header.php';
 $bahan = $pdo->query("SELECT * FROM bahan_baku ORDER BY nama_bahan ASC")->fetchAll();
@@ -109,13 +115,13 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     <?php if(isset($_SESSION['success'])): ?>
         <div class="p-4 rounded-xl bg-theme-bg text-theme-leaf font-bold flex items-center gap-2 border border-theme-sage/20 animate-[fadeIn_0.3s_ease-out]">
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            <?= $_SESSION['success']; unset($_SESSION['success']); ?>
+            <?= htmlspecialchars($_SESSION['success'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['success']); ?>
         </div>
     <?php endif; ?>
     <?php if(isset($_SESSION['error'])): ?>
         <div class="p-4 rounded-xl bg-red-50 text-red-600 font-bold flex items-center gap-2 border border-red-100 animate-[fadeIn_0.3s_ease-out]">
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+            <?= htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['error']); ?>
         </div>
     <?php endif; ?>
 
@@ -283,6 +289,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                             </button>
                                             
                                             <form method="POST" class="m-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus bahan ini secara permanen?')">
+                                                <?= csrfField() ?>
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" :value="b.id">
                                                 <button type="submit" class="w-full text-left px-4 py-3 text-xs font-bold text-theme-coral hover:bg-theme-coral/10 transition-colors flex items-center gap-2">
@@ -316,6 +323,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
             
             <form action="inventaris.php" method="POST" class="space-y-5">
+                <?= csrfField() ?>
                 <input type="hidden" name="action" :value="modalMode">
                 <input type="hidden" name="id" x-model="form.id">
                 

@@ -1,9 +1,10 @@
 <?php
-$page_title = 'Kelola Resep & Profit Margin';
+$page_title = 'Kelola Resep & Margin Keuntungan';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/helpers.php';
 requireRole(['admin']);
+requireCsrfToken();
 
 $menu_id = isset($_GET['menu_id']) ? (int)$_GET['menu_id'] : 0;
 
@@ -25,6 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = (int)$_POST['id'];
             $pdo->prepare("DELETE FROM resep_menu WHERE id = ?")->execute([$id]);
             $_SESSION['success'] = "Bahan dihapus dari resep.";
+        } elseif ($action === 'edit') {
+            $id = (int)$_POST['id'];
+            $jumlah = (float)$_POST['jumlah_dibutuhkan'];
+            if ($jumlah <= 0) throw new Exception("Takaran harus lebih dari 0.");
+            $stmtCek = $pdo->prepare("SELECT id FROM resep_menu WHERE id = ?");
+            $stmtCek->execute([$id]);
+            if (!$stmtCek->fetch()) throw new Exception("Bahan tidak ditemukan.");
+            $pdo->prepare("UPDATE resep_menu SET jumlah_dibutuhkan = ? WHERE id = ?")->execute([$jumlah, $id]);
+            $_SESSION['success'] = "Takaran bahan berhasil diperbarui.";
         }
     } catch(Exception $e) {
         $_SESSION['error'] = $e->getMessage();
@@ -104,7 +114,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-extrabold text-vibe-on-surface tracking-tight">Manajemen Resep</h1>
-            <p class="text-vibe-on-surface-variant mt-0.5 text-sm font-medium">Kelola standar bahan dan HPP untuk menu restoran.</p>
+            <p class="text-vibe-on-surface-variant mt-0.5 text-sm font-medium">Kelola standar bahan dan modal bahan untuk menu restoran.</p>
         </div>
         <div class="flex items-center gap-3">
             <!-- Search -->
@@ -152,7 +162,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                         </div>
                                     </div>
                                     <div class="text-right flex-shrink-0">
-                                        <div class="text-[10px] font-semibold text-vibe-outline uppercase tracking-wider">HPP</div>
+                                        <div class="text-[10px] font-semibold text-vibe-outline uppercase tracking-wider">Modal</div>
                                         <div class="font-extrabold text-sm" :class="m.total_cogs > 0 ? 'text-vibe-primary' : 'text-vibe-outline'" x-text="formatRp(m.total_cogs)"></div>
                                     </div>
                                 </div>
@@ -184,7 +194,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <svg class="w-10 h-10 text-vibe-primary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                     </div>
                     <h3 class="text-lg font-bold text-vibe-on-surface mb-1">Pilih menu dari daftar</h3>
-                    <p class="text-sm text-vibe-outline max-w-xs">Klik salah satu menu di sebelah kiri untuk melihat dan mengelola resep beserta analisis HPP-nya.</p>
+                    <p class="text-sm text-vibe-outline max-w-xs">Klik salah satu menu di sebelah kiri untuk melihat dan mengelola resep beserta analisis modal bahan.</p>
                 </div>
 
                 <?php else: ?>
@@ -220,7 +230,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     <!-- KPI Cards Row -->
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-white rounded-2xl border border-vibe-outline-variant/20 p-5 shadow-sm">
-                            <div class="text-[11px] font-bold text-vibe-outline uppercase tracking-widest mb-1">Total Food Cost (HPP)</div>
+                            <div class="text-[11px] font-bold text-vibe-outline uppercase tracking-widest mb-1">Total Modal Bahan</div>
                             <div class="text-2xl font-extrabold text-vibe-error"><?= formatRupiah($total_cogs) ?></div>
                         </div>
                         <div class="bg-white rounded-2xl border border-vibe-outline-variant/20 p-5 shadow-sm">
@@ -232,7 +242,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     <!-- Gross Margin Bar -->
                     <div class="bg-white rounded-2xl border border-vibe-outline-variant/20 p-5 shadow-sm">
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-sm font-bold text-vibe-on-surface">Gross Margin</span>
+                            <span class="text-sm font-bold text-vibe-on-surface">Margin Keuntungan</span>
                             <span class="text-xl font-extrabold <?= $margin_persen >= 50 ? 'text-vibe-secondary' : ($margin_persen > 20 ? 'text-vibe-primary' : 'text-vibe-error') ?>">
                                 <?= number_format($margin_persen, 1) ?>%
                             </span>
@@ -242,8 +252,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                  style="width: <?= min(max($margin_persen, 0), 100) ?>%"></div>
                         </div>
                         <div class="flex justify-between mt-2 text-[10px] font-semibold text-vibe-outline">
-                            <span>Untung: <?= formatRupiah($profit) ?> / porsi</span>
-                            <span><?= $margin_persen >= 50 ? '✅ Sehat' : ($margin_persen > 20 ? '⚠️ Moderat' : '🔴 Rendah') ?></span>
+                            <span>Laba: <?= formatRupiah($profit) ?> / porsi</span>
+                            <span><?= $margin_persen >= 50 ? '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-bold">Sehat</span>' : ($margin_persen > 20 ? '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 font-bold">Moderat</span>' : '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-bold">Rendah</span>') ?></span>
                         </div>
                     </div>
 
@@ -263,7 +273,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                 <tr class="text-[10px] font-bold text-vibe-outline uppercase tracking-widest border-b border-vibe-outline-variant/10">
                                     <th class="px-5 py-3 text-left">Item</th>
                                     <th class="px-5 py-3 text-center">Qty</th>
-                                    <th class="px-5 py-3 text-right">Cost</th>
+                                    <th class="px-5 py-3 text-right">Modal</th>
                                     <th class="px-5 py-3 text-center w-12"></th>
                                 </tr>
                             </thead>
@@ -279,19 +289,48 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                             <div class="font-semibold text-vibe-on-surface text-sm"><?= htmlspecialchars($r['nama_bahan']) ?></div>
                                         </td>
                                         <td class="px-5 py-3.5 text-center">
-                                            <span class="font-bold text-vibe-on-surface"><?= floatval($r['jumlah_dibutuhkan']) ?></span>
-                                            <span class="text-xs text-vibe-outline ml-1"><?= htmlspecialchars($r['satuan']) ?></span>
+                                            <!-- Display Mode -->
+                                            <div x-show="editingId !== <?= $r['id'] ?>" class="flex items-center justify-center gap-1">
+                                                <span class="font-bold text-vibe-on-surface"><?= floatval($r['jumlah_dibutuhkan']) ?></span>
+                                                <span class="text-xs text-vibe-outline"><?= htmlspecialchars($r['satuan']) ?></span>
+                                            </div>
+                                            <!-- Edit Mode -->
+                                            <div x-show="editingId === <?= $r['id'] ?>" class="flex items-center justify-center gap-1">
+                                                <form method="POST" class="flex items-center gap-1 m-0">
+                                                    <?= csrfField() ?>
+                                                    <input type="hidden" name="action" value="edit">
+                                                    <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                                    <input type="hidden" name="menu_id" value="<?= $menu_id ?>">
+                                                    <input type="number" step="0.01" name="jumlah_dibutuhkan"
+                                                           x-model="editQty" required min="0.01"
+                                                           class="w-20 px-2 py-1 text-sm font-bold text-center border border-vibe-primary rounded-md focus:outline-none focus:ring-2 focus:ring-vibe-primary/30">
+                                                    <span class="text-xs text-vibe-outline"><?= htmlspecialchars($r['satuan']) ?></span>
+                                                    <button type="submit" class="p-1.5 rounded-lg text-vibe-secondary hover:bg-vibe-secondary/10 transition-colors" title="Simpan">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                                    </button>
+                                                    <button type="button" @click="cancelEdit()" class="p-1.5 rounded-lg text-vibe-outline hover:bg-vibe-surface-dim transition-colors" title="Batal">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                         <td class="px-5 py-3.5 text-right font-bold text-vibe-on-surface text-sm"><?= formatRupiah($cost) ?></td>
                                         <td class="px-5 py-3.5 text-center">
-                                            <form method="POST" class="m-0 inline" onsubmit="return confirm('Hapus bahan ini?')">
-                                                <input type="hidden" name="action" value="delete">
-                                                <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                                                <input type="hidden" name="menu_id" value="<?= $menu_id ?>">
-                                                <button type="submit" class="p-1.5 rounded-lg text-vibe-error/60 hover:text-vibe-error hover:bg-vibe-error/10 transition-colors">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                            <div class="flex items-center justify-center gap-1">
+                                                <button @click="startEdit(<?= $r['id'] ?>, <?= floatval($r['jumlah_dibutuhkan']) ?>)"
+                                                        class="p-1.5 rounded-lg text-vibe-outline hover:text-vibe-primary hover:bg-vibe-primary/10 transition-colors" title="Edit">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                 </button>
-                                            </form>
+                                <form method="POST" class="m-0 inline" onsubmit="return confirm('Hapus bahan ini?')">
+                                    <?= csrfField() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                                    <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                                    <input type="hidden" name="menu_id" value="<?= $menu_id ?>">
+                                                    <button type="submit" class="p-1.5 rounded-lg text-vibe-error/60 hover:text-vibe-error hover:bg-vibe-error/10 transition-colors" title="Hapus">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                     <?php endforeach; ?>
@@ -302,6 +341,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <!-- Add Ingredient Form -->
                         <div class="p-5 bg-vibe-bg/50 border-t border-vibe-outline-variant/10">
                             <form method="POST" class="flex items-end gap-3" x-data="{ selectedBahan: '' }">
+                                <?= csrfField() ?>
                                 <input type="hidden" name="action" value="add">
                                 <input type="hidden" name="menu_id" value="<?= $menu_id ?>">
                                 <div class="flex-1">
@@ -339,6 +379,8 @@ document.addEventListener('alpine:init', () => {
         menus: <?= json_encode($menus) ?>,
         selectedId: <?= $menu_id ?>,
         search: '',
+        editingId: null,
+        editQty: '',
 
         get filteredMenus() {
             if (this.search === '') return this.menus;
@@ -357,6 +399,15 @@ document.addEventListener('alpine:init', () => {
             if (!dateStr) return '-';
             const d = new Date(dateStr);
             return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        },
+
+        startEdit(id, currentQty) {
+            this.editingId = id;
+            this.editQty = currentQty;
+        },
+        cancelEdit() {
+            this.editingId = null;
+            this.editQty = '';
         }
     }));
 });

@@ -4,6 +4,9 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/helpers.php';
 
+requireRole(['admin']);
+requireCsrfToken();
+
 // Handle POST Actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -30,7 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($check->fetchColumn() > 0) {
             $_SESSION['error'] = "Wah, Kategori ini nggak bisa dihapus karena masih ada menu yang menggunakannya.";
         } else {
+            $stmtNama = $pdo->prepare("SELECT nama_kategori FROM kategori WHERE id = ?");
+            $stmtNama->execute([$id]);
+            $namaKategori = $stmtNama->fetchColumn();
             $pdo->prepare("DELETE FROM kategori WHERE id = ?")->execute([$id]);
+            logAuditAction('delete_kategori', 'kategori', $id, $namaKategori ? "Kategori: $namaKategori" : null);
             $_SESSION['success'] = "Kategori berhasil dihapus dengan aman.";
         }
     }
@@ -43,20 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status        = $_POST['status'] ?? 'tersedia';
         $gambar_name   = null;
 
-        if (!empty($_FILES['gambar']['name'])) {
-            $ext = strtolower(pathinfo($_FILES['gambar']['name'], PATHINFO_EXTENSION));
-            if (!in_array($ext, ['jpg','jpeg','png','webp','jfif','gif'])) {
-                $_SESSION['error'] = "Format gambar harus jpg, png, atau webp ya.";
-                header('Location: menu.php'); exit;
-            }
-            if ($_FILES['gambar']['size'] > 2 * 1024 * 1024) {
-                $_SESSION['error'] = "Ukuran gambar terlalu besar, maksimal 2MB saja.";
-                header('Location: menu.php'); exit;
-            }
-            $gambar_name = 'menu_' . time() . '_' . rand(1000,9999) . '.' . $ext;
-            $uploadDir = __DIR__ . '/../../assets/images/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-            move_uploaded_file($_FILES['gambar']['tmp_name'], $uploadDir . $gambar_name);
+        try {
+            $gambar_name = handleMenuImageUpload($_FILES['gambar'] ?? null);
+        } catch (RuntimeException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: menu.php'); exit;
         }
 
         $pdo->prepare("INSERT INTO menu (kategori_id, nama_menu, harga, gambar, status) VALUES (?,?,?,?,?)")
@@ -70,21 +68,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $kategori_id = (int)$_POST['kategori_id'];
         $harga       = (float)$_POST['harga'];
         $status      = $_POST['status'] ?? 'tersedia';
-        $old_gambar  = $_POST['old_gambar'] ?? null;
+        $stmtOld = $pdo->prepare("SELECT gambar FROM menu WHERE id = ?");
+        $stmtOld->execute([$id]);
+        $old_gambar = $stmtOld->fetchColumn();
         $gambar_name = $old_gambar;
 
-        if (!empty($_FILES['gambar']['name'])) {
-            $ext = strtolower(pathinfo($_FILES['gambar']['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg','jpeg','png','webp','jfif','gif']) && $_FILES['gambar']['size'] <= 2 * 1024 * 1024) {
-                $gambar_name = 'menu_' . time() . '_' . rand(1000,9999) . '.' . $ext;
-                $uploadDir = __DIR__ . '/../../assets/images/';
-                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                move_uploaded_file($_FILES['gambar']['tmp_name'], $uploadDir . $gambar_name);
-                // Hapus gambar lama
-                if ($old_gambar && file_exists($uploadDir . $old_gambar)) {
-                    unlink($uploadDir . $old_gambar);
-                }
+        try {
+            $new_filename = handleMenuImageUpload($_FILES['gambar'] ?? null);
+            if ($new_filename) {
+                deleteMenuImage($old_gambar);
+                $gambar_name = $new_filename;
             }
+        } catch (RuntimeException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: menu.php'); exit;
         }
 
         $pdo->prepare("UPDATE menu SET kategori_id=?, nama_menu=?, harga=?, gambar=?, status=? WHERE id=?")
@@ -100,8 +97,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete_menu') {
         $id = (int)$_POST['id'];
+        $stmtMenu = $pdo->prepare("SELECT nama_menu FROM menu WHERE id = ?");
+        $stmtMenu->execute([$id]);
+        $namaMenu = $stmtMenu->fetchColumn();
         // SAFE ARCHIVING: Alih-alih DELETE, kita set is_active = 0
         $pdo->prepare("UPDATE menu SET is_active = 0 WHERE id = ?")->execute([$id]);
+        logAuditAction('archive_menu', 'menu', $id, $namaMenu ? "Menu: $namaMenu" : null);
         $_SESSION['success'] = "Menu berhasil diarsipkan (Tenang, laporan penjualan lamanya tetap aman kok!).";
     }
 
@@ -110,7 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Sekarang baru aman load header (output HTML)
-requireRole(['admin']);
 
 require_once __DIR__ . '/../../includes/header.php';
 // ─── FETCH DATA ───────────────────────────────────────────────
@@ -155,13 +155,13 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     <?php if(isset($_SESSION['success'])): ?>
         <div class="p-4 rounded-xl bg-theme-bg text-theme-leaf font-bold flex items-center gap-2 border border-theme-sage/20 animate-[fadeIn_0.3s_ease-out]">
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            <?= $_SESSION['success']; unset($_SESSION['success']); ?>
+            <?= htmlspecialchars($_SESSION['success'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['success']); ?>
         </div>
     <?php endif; ?>
     <?php if(isset($_SESSION['error'])): ?>
         <div class="p-4 rounded-xl bg-red-50 text-red-600 font-bold flex items-center gap-2 border border-red-100 animate-[fadeIn_0.3s_ease-out]">
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+            <?= htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['error']); ?>
         </div>
     <?php endif; ?>
 
@@ -243,6 +243,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                                 Edit Detail
                                             </button>
                                             <form method="POST" class="m-0" onsubmit="return confirm('Apakah Anda yakin ingin mengarsipkan menu ini?')">
+                                                <?= csrfField() ?>
                                                 <input type="hidden" name="action" value="delete_menu">
                                                 <input :value="menu.id" type="hidden" name="id">
                                                 <button type="submit" class="w-full text-left px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors flex items-center gap-2">
@@ -277,6 +278,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                 
                                 <template x-if="menu.missing_ingredients == 0">
                                     <form method="POST" class="m-0">
+                                        <?= csrfField() ?>
                                         <input type="hidden" name="action" value="toggle_status">
                                         <input type="hidden" name="id" :value="menu.id">
                                         <button type="submit" class="w-full py-2.5 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1"
@@ -313,6 +315,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 
                 <!-- Add New Form -->
                 <form method="POST" class="mb-6 pb-6 border-b border-dashed border-gray-200">
+                    <?= csrfField() ?>
                     <input type="hidden" name="action" value="add_kategori">
                     <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tambah Kategori Baru</label>
                     <div class="flex gap-2">
@@ -334,6 +337,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                 </button>
                                 <form method="POST" class="m-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?')">
+                                    <?= csrfField() ?>
                                     <input type="hidden" name="action" value="delete_kategori">
                                     <input type="hidden" name="id" :value="kat.id">
                                     <button type="submit" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
@@ -344,6 +348,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                             <!-- Edit Mode -->
                             <form x-show="editCatId === kat.id" method="POST" class="flex-1 flex gap-2" style="display:none">
+                                <?= csrfField() ?>
                                 <input type="hidden" name="action" value="edit_kategori">
                                 <input type="hidden" name="id" :value="kat.id">
                                 <input type="text" name="nama_kategori" x-model="editCatName" required class="flex-1 px-3 py-1.5 bg-white border border-theme-sage rounded-lg focus:outline-none text-sm font-bold text-theme-evergreen">
@@ -379,9 +384,10 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 </div>
 
                 <form method="POST" enctype="multipart/form-data" class="space-y-5">
+                    <?= csrfField() ?>
                     <input type="hidden" name="action" :value="editingMenuId ? 'edit_menu' : 'add_menu'">
                     <input type="hidden" name="id" :value="editingMenuId">
-                    <input type="hidden" name="old_gambar" :value="oldGambar">
+                    <?= csrfField() ?>
 
                     <!-- Image Preview -->
                     <div>

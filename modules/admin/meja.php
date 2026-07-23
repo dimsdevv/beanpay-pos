@@ -3,6 +3,7 @@ $page_title = 'Manajemen Meja';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 requireRole(['admin']);
+requireCsrfToken();
 
 // Handle aksi CRUD
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -35,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = (int)$_POST['id'];
             
             // Cek status meja
-            $stmtCek = $pdo->prepare("SELECT status FROM meja WHERE id = ?");
+            $stmtCek = $pdo->prepare("SELECT nomor_meja, status FROM meja WHERE id = ?");
             $stmtCek->execute([$id]);
             $meja = $stmtCek->fetch();
             
@@ -44,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             $pdo->prepare("DELETE FROM meja WHERE id = ?")->execute([$id]);
+            logAuditAction('delete_meja', 'meja', $id, $meja ? "Meja: {$meja['nomor_meja']}" : null);
             $_SESSION['success'] = "Meja berhasil dihapus.";
         }
     } catch (Exception $e) {
@@ -175,6 +177,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                     Edit
                                 </button>
                                 <form method="POST" class="m-0" onsubmit="return confirm('Hapus meja ini?')">
+                                    <?= csrfField() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" :value="m.id">
                                     <!-- Disable delete if table is in use -->
@@ -239,6 +242,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
             
             <form action="meja.php" method="POST" class="space-y-5">
+                <?= csrfField() ?>
                 <input type="hidden" name="action" :value="isEdit ? 'edit' : 'add'">
                 <input type="hidden" name="id" x-model="form.id">
                 

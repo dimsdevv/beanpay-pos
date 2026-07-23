@@ -84,117 +84,121 @@ $stmtTopSelling = $pdo->query("
 $topSelling = $stmtTopSelling->fetchAll();
 
 // 4. Low Stock Alert
+$batasStokRendah = 10;
+$stmtBatas = $pdo->query("SELECT nilai FROM pengaturan WHERE kunci = 'batas_stok_rendah'");
+$rowBatas = $stmtBatas->fetch();
+if ($rowBatas) $batasStokRendah = max(1, (int)$rowBatas['nilai']);
+
 $stmtLowStock = $pdo->query("
     SELECT nama_bahan, stok_sekarang, satuan 
     FROM bahan_baku 
-    WHERE stok_sekarang <= 500
+    WHERE stok_sekarang <= $batasStokRendah
     ORDER BY stok_sekarang ASC
     LIMIT 4
 ");
 $lowStocks = $stmtLowStock->fetchAll();
 
 // Date formatting
-$todayDate = date('l, F jS, Y');
+$hariIndo = ['Sunday'=>'Minggu','Monday'=>'Senin','Tuesday'=>'Selasa','Wednesday'=>'Rabu','Thursday'=>'Kamis','Friday'=>'Jumat','Saturday'=>'Sabtu'];
+$bulanIndo = ['January'=>'Januari','February'=>'Februari','March'=>'Maret','April'=>'April','May'=>'Mei','June'=>'Juni','July'=>'Juli','August'=>'Agustus','September'=>'September','October'=>'Oktober','November'=>'November','December'=>'Desember'];
+$todayDate = $hariIndo[date('l')] . ', ' . date('d') . ' ' . $bulanIndo[date('F')] . ' ' . date('Y');
 
 require_once __DIR__ . '/../../includes/sidebar.php';
 ?>
 
-<!-- Include Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Include Chart.js (local) -->
+<script src="<?= BASE_URL ?>/assets/vendor/chart.min.js"></script>
 
 <!-- Page Header -->
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8 animate-fade-in">
     <div>
-        <h1 class="text-2xl md:text-[28px] font-extrabold text-vibe-on-surface tracking-tight leading-tight">Today's Overview</h1>
+        <h1 class="text-2xl md:text-[28px] font-extrabold text-vibe-on-surface tracking-tight leading-tight">Ringkasan Hari Ini</h1>
         <p class="text-sm text-vibe-on-surface-variant mt-1"><?= $todayDate ?></p>
     </div>
     <div class="mt-3 sm:mt-0 flex items-center gap-3">
         <!-- LIVE Indicator -->
         <div id="live-indicator" class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
             <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            <span class="text-xs font-bold text-green-700 uppercase tracking-wider">Live</span>
+            <span class="text-xs font-bold text-green-700 uppercase tracking-wider">Langsung</span>
         </div>
         <div class="flex items-center gap-2 text-sm font-semibold text-vibe-primary cursor-pointer hover:text-vibe-primary-container transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            Last 7 Days
+            7 Hari Terakhir
         </div>
     </div>
 </div>
 
-<!-- KPI Cards Row (3 cards like reference) -->
+<!-- KPI Cards Row (3 cards) -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
     
     <!-- Card 1: Total Revenue -->
-    <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300 animate-fade-in" style="animation-delay: 0.05s">
+    <div class="bg-white rounded-lg p-6 border border-vibe-outline-variant transition-colors hover:border-vibe-on-surface animate-fade-in" style="animation-delay: 0.05s">
         <div class="flex items-start justify-between mb-4">
-            <div class="w-11 h-11 rounded-xl bg-vibe-primary flex items-center justify-center text-white">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div class="w-10 h-10 rounded bg-vibe-surface-dim border border-vibe-outline-variant flex items-center justify-center text-vibe-on-surface">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
-            <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold <?= $salesPct >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-vibe-error' ?>">
+            <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border <?= $salesPct >= 0 ? 'bg-vibe-secondary-container border-vibe-secondary/20 text-vibe-secondary' : 'bg-vibe-error-container border-vibe-error/20 text-vibe-error' ?>">
                 <?php if($salesPct >= 0): ?>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 <?php else: ?>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
                 <?php endif; ?>
                 <?= $salesPct >= 0 ? '+' : '' ?><?= $salesPct ?>%
             </div>
         </div>
-        <p class="text-xs font-semibold text-vibe-on-surface-variant uppercase tracking-wider mb-1">Total Revenue</p>
-        <p id="kpi-revenue" class="text-2xl font-extrabold text-vibe-on-surface transition-all duration-500"><?= formatRupiah($totalSalesToday) ?></p>
+        <p class="text-[11px] font-semibold text-vibe-on-surface-variant uppercase tracking-widest mb-1">Total Pendapatan</p>
+        <p id="kpi-revenue" class="text-2xl font-display font-bold text-vibe-on-surface transition-colors duration-500 tracking-tight"><?= formatRupiah($totalSalesToday) ?></p>
     </div>
 
     <!-- Card 2: Transactions -->
-    <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300 animate-fade-in" style="animation-delay: 0.1s">
+    <div class="bg-white rounded-lg p-6 border border-vibe-outline-variant transition-colors hover:border-vibe-on-surface animate-fade-in" style="animation-delay: 0.1s">
         <div class="flex items-start justify-between mb-4">
-            <div class="w-11 h-11 rounded-xl bg-vibe-tertiary flex items-center justify-center text-white">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+            <div class="w-10 h-10 rounded bg-vibe-surface-dim border border-vibe-outline-variant flex items-center justify-center text-vibe-on-surface">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
             </div>
-            <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold <?= $ordersPct >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-vibe-error' ?>">
+            <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border <?= $ordersPct >= 0 ? 'bg-vibe-secondary-container border-vibe-secondary/20 text-vibe-secondary' : 'bg-vibe-error-container border-vibe-error/20 text-vibe-error' ?>">
                 <?php if($ordersPct >= 0): ?>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 <?php else: ?>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
                 <?php endif; ?>
                 <?= $ordersPct >= 0 ? '+' : '' ?><?= $ordersPct ?>%
             </div>
         </div>
-        <p class="text-xs font-semibold text-vibe-on-surface-variant uppercase tracking-wider mb-1">Transactions</p>
-        <p id="kpi-orders" class="text-2xl font-extrabold text-vibe-on-surface transition-all duration-500"><?= $totalOrdersToday ?></p>
+        <p class="text-[11px] font-semibold text-vibe-on-surface-variant uppercase tracking-widest mb-1">Transaksi</p>
+        <p id="kpi-orders" class="text-2xl font-display font-bold text-vibe-on-surface transition-colors duration-500 tracking-tight"><?= $totalOrdersToday ?></p>
     </div>
 
     <!-- Card 3: Average Ticket -->
-    <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300 animate-fade-in" style="animation-delay: 0.15s">
+    <div class="bg-white rounded-lg p-6 border border-vibe-outline-variant transition-colors hover:border-vibe-on-surface animate-fade-in" style="animation-delay: 0.15s">
         <div class="flex items-start justify-between mb-4">
-            <div class="w-11 h-11 rounded-xl bg-vibe-primary flex items-center justify-center text-white">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+            <div class="w-10 h-10 rounded bg-vibe-surface-dim border border-vibe-outline-variant flex items-center justify-center text-vibe-on-surface">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
             </div>
-            <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold <?= $avgPct >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-vibe-error' ?>">
+            <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border <?= $avgPct >= 0 ? 'bg-vibe-secondary-container border-vibe-secondary/20 text-vibe-secondary' : 'bg-vibe-error-container border-vibe-error/20 text-vibe-error' ?>">
                 <?php if($avgPct >= 0): ?>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 <?php else: ?>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
                 <?php endif; ?>
                 <?= $avgPct >= 0 ? '+' : '' ?><?= $avgPct ?>%
             </div>
         </div>
-        <p class="text-xs font-semibold text-vibe-on-surface-variant uppercase tracking-wider mb-1">Average Ticket</p>
-        <p id="kpi-avg" class="text-2xl font-extrabold text-vibe-on-surface transition-all duration-500"><?= formatRupiah($averageCheck) ?></p>
+        <p class="text-[11px] font-semibold text-vibe-on-surface-variant uppercase tracking-widest mb-1">Rata-rata Belanja</p>
+        <p id="kpi-avg" class="text-2xl font-display font-bold text-vibe-on-surface transition-colors duration-500 tracking-tight"><?= formatRupiah($averageCheck) ?></p>
     </div>
 </div>
 
 <!-- Main Content Grid: Chart + Right Widgets -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-8">
     
-    <!-- Chart Section (dark container like reference) -->
-    <div class="lg:col-span-2 bg-vibe-inverse-surface rounded-xl p-6 shadow-card animate-fade-in" style="animation-delay: 0.2s">
+    <!-- Chart Section -->
+    <div class="lg:col-span-2 bg-white border border-vibe-outline-variant rounded-lg p-6 animate-fade-in" style="animation-delay: 0.2s">
         <div class="flex justify-between items-center mb-6">
             <div>
-                <h3 class="text-base font-bold text-white">Weekly Sales Performance</h3>
-                <p class="text-xs text-vibe-inverse-on-surface/60 mt-0.5">Performa penjualan 7 hari terakhir</p>
+                <h3 class="text-base font-bold text-vibe-on-surface">Performa Penjualan Mingguan</h3>
+                <p class="text-xs text-vibe-on-surface-variant mt-0.5">Grafik penjualan 7 hari terakhir</p>
             </div>
-            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-vibe-inverse-on-surface/40 hover:text-white hover:bg-white/10 transition-colors">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/></svg>
-            </button>
         </div>
         <div class="relative h-72 w-full">
             <canvas id="salesChart"></canvas>
@@ -205,10 +209,10 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     <div class="flex flex-col gap-6">
         
         <!-- Top Selling Widget -->
-        <div class="bg-white rounded-xl p-6 shadow-card animate-fade-in flex-1" style="animation-delay: 0.25s">
+        <div class="bg-white border border-vibe-outline-variant rounded-lg p-6 animate-fade-in flex-1" style="animation-delay: 0.25s">
             <div class="flex justify-between items-center mb-5">
-                <h3 class="text-base font-bold text-vibe-on-surface">Top Selling</h3>
-                <a href="<?= BASE_URL ?>/modules/admin/menu.php" class="text-xs font-semibold text-vibe-primary hover:text-vibe-primary-container transition-colors">View All</a>
+                <h3 class="text-sm font-bold text-vibe-on-surface uppercase tracking-wider">Terlaris</h3>
+                <a href="<?= BASE_URL ?>/modules/admin/menu.php" class="text-xs font-semibold text-vibe-on-surface hover:underline transition-colors">Lihat Semua</a>
             </div>
             
             <div class="space-y-4">
@@ -235,7 +239,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             <?php if($item['gambar'] && file_exists(__DIR__ . '/../../assets/images/' . $item['gambar'])): ?>
                             <img src="<?= BASE_URL ?>/assets/images/<?= $item['gambar'] ?>" alt="" class="w-full h-full object-cover">
                             <?php else: ?>
-                            <div class="w-full h-full flex items-center justify-center text-2xl bg-vibe-surface-container">🍽️</div>
+                            <div class="w-full h-full flex items-center justify-center bg-vibe-surface-container">
+                                <svg class="w-6 h-6 text-vibe-outline-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 019.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>
+                            </div>
                             <?php endif; ?>
                         </div>
                         <!-- Product Info -->
@@ -246,7 +252,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <!-- Price & Sold -->
                         <div class="text-right shrink-0">
                             <p class="text-sm font-bold text-vibe-on-surface"><?= formatRupiah($item['harga']) ?></p>
-                            <p class="text-[11px] text-vibe-on-surface-variant"><?= $item['total_sold'] ?> sold</p>
+                            <p class="text-[11px] text-vibe-on-surface-variant"><?= $item['total_sold'] ?> terjual</p>
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -255,10 +261,10 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         </div>
 
         <!-- Low Stock Alerts Widget -->
-        <div class="bg-white rounded-xl p-6 shadow-card animate-fade-in" style="animation-delay: 0.3s">
+        <div class="bg-white border border-vibe-outline-variant rounded-lg p-6 animate-fade-in" style="animation-delay: 0.3s">
             <div class="flex items-center gap-2 mb-4">
-                <svg class="w-5 h-5 text-vibe-error" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>
-                <h3 class="text-base font-bold text-vibe-on-surface">Low Stock Alerts</h3>
+                <svg class="w-4 h-4 text-vibe-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>
+                <h3 class="text-sm font-bold text-vibe-on-surface uppercase tracking-wider">Peringatan Stok Rendah</h3>
             </div>
             
             <div class="space-y-3">
@@ -276,7 +282,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     <?php foreach($lowStocks as $stock): ?>
                     <div class="flex items-center justify-between py-2 border-b border-vibe-outline-variant/15 last:border-0">
                         <p class="text-sm text-vibe-on-surface font-medium"><?= htmlspecialchars($stock['nama_bahan']) ?></p>
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-vibe-error"><?= floatval($stock['stok_sekarang']) ?> left</span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-vibe-error"><?= floatval($stock['stok_sekarang']) ?> tersisa</span>
                     </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -286,15 +292,15 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 </div>
 
 <!-- Live Activity Feed -->
-<div id="live-activity-section" class="bg-white rounded-xl shadow-card p-6 mb-8 animate-fade-in" style="animation-delay: 0.3s">
+<div id="live-activity-section" class="bg-white border border-vibe-outline-variant rounded-lg p-6 mb-8 animate-fade-in" style="animation-delay: 0.3s">
     <div class="flex items-center justify-between mb-5">
         <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
-                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <div class="w-8 h-8 rounded border border-vibe-outline-variant bg-vibe-surface-dim flex items-center justify-center">
+                <svg class="w-4 h-4 text-vibe-on-surface" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
             </div>
-            <h3 class="text-base font-bold text-vibe-on-surface">Live Activity</h3>
+            <h3 class="text-sm font-bold text-vibe-on-surface uppercase tracking-wider">Aktivitas Langsung</h3>
         </div>
-        <span id="activity-timer" class="text-xs font-medium text-vibe-on-surface-variant">Updated just now</span>
+        <span id="activity-timer" class="text-[11px] font-semibold text-vibe-on-surface-variant uppercase tracking-widest">Diperbarui baru saja</span>
     </div>
     <div id="activity-feed" class="space-y-3">
         <?php if(count($activity ?? []) === 0 && $totalOrdersToday === 0): ?>
@@ -317,34 +323,34 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         }).format(number);
     };
 
-    // Initialize Chart.js with dark theme
+    // Initialize Chart.js with Swiss Minimal theme
     const ctx = document.getElementById('salesChart').getContext('2d');
     
-    // Neon blue gradient for the fill area
+    // Minimal gradient fill
     let gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, 'rgba(37, 99, 235, 0.35)');
-    gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)');
+    gradient.addColorStop(0, 'rgba(15, 23, 42, 0.1)');
+    gradient.addColorStop(1, 'rgba(15, 23, 42, 0.0)');
     
     new Chart(ctx, {
         type: 'line',
         data: {
             labels: <?= json_encode($chartLabels) ?>,
             datasets: [{
-                label: 'Revenue',
+                label: 'Pendapatan',
                 data: <?= json_encode($chartData) ?>,
-                borderColor: '#60a5fa',
+                borderColor: '#020617',
                 backgroundColor: gradient,
-                borderWidth: 3,
-                pointBackgroundColor: '#60a5fa',
-                pointBorderColor: '#60a5fa',
-                pointBorderWidth: 0,
-                pointRadius: 3,
+                borderWidth: 2,
+                pointBackgroundColor: '#FFFFFF',
+                pointBorderColor: '#020617',
+                pointBorderWidth: 2,
+                pointRadius: 4,
                 pointHoverRadius: 6,
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: '#60a5fa',
-                pointHoverBorderWidth: 3,
+                pointHoverBackgroundColor: '#020617',
+                pointHoverBorderColor: '#020617',
+                pointHoverBorderWidth: 2,
                 fill: true,
-                tension: 0.4
+                tension: 0.3
             }]
         },
         options: {
@@ -355,16 +361,16 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     display: false
                 },
                 tooltip: {
-                    backgroundColor: '#fff',
-                    titleColor: '#0b1c30',
-                    bodyColor: '#0b1c30',
-                    borderColor: '#e5eeff',
+                    backgroundColor: '#020617',
+                    titleColor: '#FFFFFF',
+                    bodyColor: '#FFFFFF',
+                    borderColor: '#020617',
                     borderWidth: 1,
                     padding: 12,
-                    titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: '500' },
-                    bodyFont: { family: 'Plus Jakarta Sans', size: 14, weight: '700' },
+                    titleFont: { family: 'Inter', size: 11, weight: '600' },
+                    bodyFont: { family: 'Outfit', size: 14, weight: '700' },
                     displayColors: false,
-                    cornerRadius: 8,
+                    cornerRadius: 4,
                     callbacks: {
                         label: function(context) {
                             return formatRp(context.parsed.y);
@@ -375,23 +381,23 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             scales: {
                 x: {
                     grid: {
-                        color: 'rgba(255,255,255,0.06)',
+                        color: '#E2E8F0',
                         drawBorder: false,
                     },
                     ticks: {
-                        font: { family: 'Plus Jakarta Sans', size: 11, weight: '500' },
-                        color: 'rgba(234,241,255,0.5)'
+                        font: { family: 'Inter', size: 11, weight: '500' },
+                        color: '#64748B'
                     }
                 },
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'rgba(255,255,255,0.06)',
+                        color: '#E2E8F0',
                         drawBorder: false,
                     },
                     ticks: {
-                        font: { family: 'Plus Jakarta Sans', size: 11 },
-                        color: 'rgba(234,241,255,0.5)',
+                        font: { family: 'Inter', size: 11 },
+                        color: '#64748B',
                         callback: function(value) {
                             if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
                             if (value >= 1000) return (value / 1000).toFixed(0) + 'k';
@@ -423,15 +429,13 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     // Smooth count-up animation
     function animateValue(el, newText) {
         if (el.textContent === newText) return;
-        el.style.transform = 'scale(1.08)';
-        el.style.color = '#004ac6';
+        el.style.color = '#020617';
         setTimeout(() => {
             el.textContent = newText;
-        }, 150);
+        }, 50);
         setTimeout(() => {
-            el.style.transform = 'scale(1)';
             el.style.color = '';
-        }, 400);
+        }, 150);
     }
 
     // Render activity feed
@@ -440,9 +444,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         if (!feed || items.length === 0) return;
         
         const methodIcons = {
-            'CASH': { bg: 'bg-green-50', text: 'text-green-600', icon: '💵' },
-            'QRIS': { bg: 'bg-purple-50', text: 'text-purple-600', icon: '📱' },
-            'DEBIT': { bg: 'bg-blue-50', text: 'text-blue-600', icon: '💳' }
+            'CASH': { bg: 'bg-green-50', text: 'text-green-600', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>' },
+            'QRIS': { bg: 'bg-purple-50', text: 'text-purple-600', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>' },
+            'DEBIT': { bg: 'bg-blue-50', text: 'text-blue-600', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>' }
         };
 
         feed.innerHTML = items.map(a => {
@@ -450,7 +454,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             return `
             <div class="flex items-center justify-between py-3 px-4 bg-vibe-bg rounded-lg hover:bg-vibe-surface-container transition-colors">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg ${m.bg} flex items-center justify-center text-lg">${m.icon}</div>
+                    <div class="w-9 h-9 rounded-lg ${m.bg} flex items-center justify-center">${m.icon}</div>
                     <div>
                         <p class="text-sm font-bold text-vibe-on-surface">${a.nomor_pesanan}</p>
                         <p class="text-xs text-vibe-on-surface-variant">${a.kasir} • ${a.metode}</p>
@@ -481,7 +485,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         });
         Toast.fire({
             icon: 'success',
-            title: `<span style="font-weight:700">💰 Pembayaran Baru!</span>`,
+            title: `<span style="font-weight:700;display:flex;align-items:center;gap:6px"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg> Pembayaran Baru!</span>`,
             html: `<span style="font-size:13px">${notif.nomor_pesanan} • <b>${formatRupiahLive(notif.total)}</b> (${notif.metode})</span>`
         });
     }
@@ -529,18 +533,18 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
             // Update timer text
             const timer = document.getElementById('activity-timer');
-            if (timer) timer.textContent = 'Updated at ' + data.server_time;
+            if (timer) timer.textContent = 'Diperbarui pukul ' + data.server_time;
 
             // Update last_id
             lastPaymentId = data.last_id;
             isFirstLoad = false;
 
         } catch (err) {
-            console.warn('[BeanPay Live] Polling error:', err);
+            console.warn('[Checkpoint] Polling error:', err);
             const indicator = document.getElementById('live-indicator');
             if (indicator) {
                 indicator.querySelector('span:first-child').className = 'w-2 h-2 bg-yellow-400 rounded-full';
-                indicator.querySelector('span:last-child').textContent = 'Reconnecting...';
+                indicator.querySelector('span:last-child').textContent = 'Menghubungkan ulang...';
             }
         }
     }

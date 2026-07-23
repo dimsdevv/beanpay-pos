@@ -1,6 +1,6 @@
 <?php
 /**
- * BeanPay - Entry Point
+ * Checkpoint POS - Entry Point
  */
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
