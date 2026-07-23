@@ -12,7 +12,10 @@
     "dir": "ltr",
     "scope_extensions": [
         {
-            "origin": "https://auth.cekpoint.store"
+            "origin": "*.cekpoint.store"
+        },
+        {
+            "origin": "https://cekpoint.store"
         }
     ],
     "id": "/",
@@ -24,6 +27,30 @@
             "platform": "play",
             "url": "https://play.google.com/store/apps/details?id=store.cekpoint.app",
             "id": "store.cekpoint.app"
+        }
+    ],
+    "launch_handler": {
+        "client_mode": "navigate-existing"
+    },
+    "protocol_handlers": [
+        {
+            "protocol": "web+cekpoint",
+            "url": "/?action=%s"
+        }
+    ],
+    "file_handlers": [
+        {
+            "action": "/",
+            "accept": {
+                "text/csv": [".csv"]
+            }
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "url": "/",
+            "description": "Buka Dashboard"
         }
     ],
     "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
