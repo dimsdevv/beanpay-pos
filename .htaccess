@@ -5,3 +5,9 @@
 <FilesMatch "\.(sql|bak|env)$">
     Require all denied
 </FilesMatch>
+
+<FilesMatch "^(service-worker\.js|manifest\.json)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</FilesMatch>
