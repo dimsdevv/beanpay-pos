@@ -174,6 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </svg>
                         </span>
                         <input type="text" name="username" id="username" required autofocus
+                               autocomplete="username"
                                value="<?= htmlspecialchars($_POST['username'] ?? '') ?>"
                                placeholder="Masukkan username"
                                class="vibe-input w-full pl-10 pr-4 py-2.5 bg-white border border-vibe-outline-variant rounded-md text-vibe-on-surface text-sm font-medium placeholder-vibe-outline-variant outline-none">
@@ -190,6 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </svg>
                         </span>
                         <input id="passwordInput" name="password" required
+                               autocomplete="current-password"
                                placeholder="Masukkan password"
                                class="vibe-input w-full pl-10 pr-10 py-2.5 bg-white border border-vibe-outline-variant rounded-md text-vibe-on-surface text-sm font-medium placeholder-vibe-outline-variant outline-none"
                                type="password">
