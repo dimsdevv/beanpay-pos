@@ -43,11 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="description" content="Masuk ke sistem Checkpoint POS untuk mengelola restoran Anda.">
     <meta name="theme-color" content="#0F172A">
     <link rel="manifest" href="<?= BASE_URL ?>/manifest.json">
-    <script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('<?= BASE_URL ?>/service-worker.js');
-    }
-    </script>
+
     <!-- Local Vendor Assets (Offline-first) -->
     <script src="<?= BASE_URL ?>/assets/vendor/tailwind.min.js"></script>
 

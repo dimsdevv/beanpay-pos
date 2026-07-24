@@ -1,15 +1,17 @@
-self.addEventListener('install', (e) => {
-    self.skipWaiting(); // Paksa service worker baru langsung aktif
+self.addEventListener('install', function(e) {
+  self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-    e.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => caches.delete(cacheName)) // Hapus semua cache lama yang rusak
-            );
-        }).then(() => self.clients.claim()) // Ambil alih kontrol halaman
-    );
+self.addEventListener('activate', function(e) {
+  e.waitUntil(
+    self.registration.unregister()
+      .then(function() {
+        return self.clients.matchAll();
+      })
+      .then(function(clients) {
+        clients.forEach(client => client.navigate(client.url));
+      })
+  );
 });
 
 self.addEventListener('fetch', (e) => {

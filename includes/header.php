@@ -150,13 +150,7 @@ require_once __DIR__ . '/helpers.php';
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
         }
     </style>
-<?php if (!isset($noPwa)): ?>
-<script>
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('<?= BASE_URL ?>/service-worker.js');
-}
-</script>
-<?php endif; ?>
+
 </head>
 <body class="text-vibe-on-surface h-screen flex overflow-hidden bg-vibe-bg antialiased" x-data="{ sidebarOpen: false }">
 
