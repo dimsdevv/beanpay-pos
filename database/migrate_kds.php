@@ -60,7 +60,7 @@ $kategoriRows = $pdo->query("SELECT nama_kategori, stasiun FROM kategori ORDER B
 <head>
     <meta charset="UTF-8">
     <title>KDS Migration</title>
-    <link rel="stylesheet" href="../assets/css/tailwind.css">
+    <link rel="stylesheet" href="../assets/css/tailwind.css?v=1.0.1">
 </head>
 <body class="bg-gray-50 min-h-screen p-8 font-mono">
 <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-md p-8">

@@ -13,7 +13,7 @@ require_once __DIR__ . '/helpers.php';
     <title>Checkpoint POS — <?= $page_title ?? 'POS System' ?></title>
     
     <!-- Tailwind CSS (Static Compiled) -->
-    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tailwind.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tailwind.css?v=1.0.1">
     
     <!-- Local Vendor Assets (Offline-first) -->
     <script defer src="<?= BASE_URL ?>/assets/vendor/alpine.min.js"></script>

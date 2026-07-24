@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="manifest" href="<?= BASE_URL ?>/manifest.json">
 
     <!-- Tailwind CSS (Static Compiled) -->
-    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tailwind.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tailwind.css?v=1.0.1">
     <style>
         body { font-family: 'Inter', sans-serif; }
         h1, h2, h3, h4, .font-display { font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; }
