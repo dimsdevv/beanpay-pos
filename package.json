@@ -1,0 +1,25 @@
+{
+  "name": "beanpay",
+  "version": "1.0.0",
+  "description": "",
+  "main": "service-worker.js",
+  "scripts": {
+    "build": "tailwindcss -i ./assets/css/input.css -o ./assets/css/tailwind-build.css --minify",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dimsdevv/beanpay-pos.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dimsdevv/beanpay-pos/issues"
+  },
+  "homepage": "https://github.com/dimsdevv/beanpay-pos#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

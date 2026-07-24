@@ -44,54 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="theme-color" content="#0F172A">
     <link rel="manifest" href="<?= BASE_URL ?>/manifest.json">
 
-    <!-- Local Vendor Assets (Offline-first) -->
-    <script src="<?= BASE_URL ?>/assets/vendor/tailwind.min.js"></script>
-
-    <!-- Google Fonts: Inter & Outfit (fallback) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Outfit', 'sans-serif'],
-                    },
-                    colors: {
-                        vibe: {
-                            'primary': '#0F172A',
-                            'primary-container': '#1E293B',
-                            'primary-light': '#F8FAFC',
-                            'on-primary': '#FFFFFF',
-                            'secondary': '#0F766E',
-                            'secondary-container': '#CCFBF1',
-                            'error': '#DC2626',
-                            'error-container': '#FEE2E2',
-                            'bg': '#FFFFFF',
-                            'surface': '#FFFFFF',
-                            'surface-dim': '#F8FAFC',
-                            'surface-container': '#F1F5F9',
-                            'on-surface': '#020617',
-                            'on-surface-variant': '#475569',
-                            'outline': '#E2E8F0',
-                            'outline-variant': '#CBD5E1',
-                        }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.3s ease-out forwards',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%':   { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind CSS (Static Compiled) -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tailwind.css">
     <style>
         body { font-family: 'Inter', sans-serif; }
         h1, h2, h3, h4, .font-display { font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; }
@@ -121,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
          LEFT PANEL — Logo
     ════════════════════════════════════ -->
     <div class="hidden lg:flex lg:w-[52%] xl:w-[55%] relative overflow-hidden">
-        <img src="<?= BASE_URL ?>/assets/images/logo.jpeg" alt="Checkpoint POS" class="absolute inset-0 w-full h-full object-cover">
+        <img src="<?= BASE_URL ?>/assets/images/logo.jpeg" alt="Checkpoint POS" fetchpriority="high" loading="eager" class="absolute inset-0 w-full h-full object-cover">
     </div>
 
     <!-- ════════════════════════════════════
