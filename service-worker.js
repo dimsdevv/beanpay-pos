@@ -14,7 +14,17 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+    // Hanya tangani request GET dan URL http/https
+    if (e.request.method !== 'GET') return;
+    if (!e.request.url.startsWith('http')) return;
+
     e.respondWith(
-        caches.match(e.request).then((r) => r || fetch(e.request))
+        fetch(e.request)
+            .then((response) => {
+                return response;
+            })
+            .catch(() => {
+                return caches.match(e.request);
+            })
     );
 });
