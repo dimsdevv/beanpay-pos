@@ -20,6 +20,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nama_lengkap = trim($_POST['nama_lengkap']);
         $role         = $_POST['role'];
         $password     = $_POST['password'];
+
+        // Validasi kekuatan password
+        if (strlen($password) < 8) {
+            $_SESSION['error'] = "Password minimal 8 karakter.";
+            header('Location: users.php'); exit;
+        }
+        if (!preg_match('/[A-Z]/', $password) || !preg_match('/[a-z]/', $password) || !preg_match('/[0-9]/', $password)) {
+            $_SESSION['error'] = "Password harus mengandung huruf besar, huruf kecil, dan angka.";
+            header('Location: users.php'); exit;
+        }
+
         $hashed       = password_hash($password, PASSWORD_BCRYPT);
 
         // Cek username unik
@@ -85,7 +96,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Reset password jika diisi
         if (!empty($_POST['new_password'])) {
-            $hashed = password_hash($_POST['new_password'], PASSWORD_BCRYPT);
+            $newPass = $_POST['new_password'];
+            if (strlen($newPass) < 8) {
+                $_SESSION['error'] = "Password baru minimal 8 karakter.";
+                header('Location: users.php'); exit;
+            }
+            if (!preg_match('/[A-Z]/', $newPass) || !preg_match('/[a-z]/', $newPass) || !preg_match('/[0-9]/', $newPass)) {
+                $_SESSION['error'] = "Password baru harus mengandung huruf besar, huruf kecil, dan angka.";
+                header('Location: users.php'); exit;
+            }
+            $hashed = password_hash($newPass, PASSWORD_BCRYPT);
             $pdo->prepare("UPDATE users SET password=? WHERE id=?")->execute([$hashed, $id]);
         }
         $_SESSION['success'] = "User berhasil diperbarui.";
@@ -399,7 +419,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-widest text-vibe-on-surface-variant mb-2" x-text="isEdit ? 'Password Baru (Opsional)' : 'Password'"></label>
-                    <input type="password" :name="isEdit ? 'new_password' : 'password'" :required="!isEdit" class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-md focus:border-vibe-on-surface outline-none transition-colors text-sm font-medium text-vibe-on-surface placeholder-vibe-outline-variant" placeholder="Kosongkan jika tidak ingin mengubah">
+                    <input type="password" :name="isEdit ? 'new_password' : 'password'" :required="!isEdit" autocomplete="new-password" class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-md focus:border-vibe-on-surface outline-none transition-colors text-sm font-medium text-vibe-on-surface placeholder-vibe-outline-variant" placeholder="Kosongkan jika tidak ingin mengubah">
                 </div>
 
                 <!-- Smart Warning -->
