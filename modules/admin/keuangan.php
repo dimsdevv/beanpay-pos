@@ -44,7 +44,7 @@ try {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_tanggal (tanggal),
             INDEX idx_kategori (kategori)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS pengeluaran_item (
@@ -58,15 +58,20 @@ try {
             subtotal DECIMAL(14,2) NOT NULL DEFAULT 0.00,
             FOREIGN KEY (pengeluaran_id) REFERENCES pengeluaran(id) ON DELETE CASCADE,
             INDEX idx_bahan (bahan_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS anggaran_bulan (
             id INT AUTO_INCREMENT PRIMARY KEY,
             periode CHAR(7) NOT NULL UNIQUE,
             nominal DECIMAL(14,2) NOT NULL DEFAULT 0.00
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
+
+    // Patch for Hostinger existing tables with wrong collation
+    $pdo->exec("ALTER TABLE pengeluaran CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $pdo->exec("ALTER TABLE pengeluaran_item CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $pdo->exec("ALTER TABLE anggaran_bulan CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
     // ---------------------------------------------------------------
     // Periode terpilih
