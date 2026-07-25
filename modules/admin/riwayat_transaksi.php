@@ -170,97 +170,104 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 <tbody class="divide-y divide-vibe-outline/50">
                     <?php foreach ($allTrx as $trx):
                         $items = $itemsByOrder[$trx['pesanan_id']] ?? [];
+                        $bukti = $trx['bukti_transfer'] ?? '';
                     ?>
                     <tr x-data="{ open: false }" class="hover:bg-vibe-surface-dim transition-colors">
-                        <td class="px-4 py-3.5">
-                            <div class="font-semibold text-sm text-vibe-on-surface"><?= htmlspecialchars($trx['nomor_pesanan']) ?></div>
-                            <div class="text-[11px] text-vibe-on-surface-variant mt-0.5">
-                                <?php if ($trx['tipe_pesanan'] === 'dine_in' && $trx['nomor_meja']): ?>
-                                    Meja <?= htmlspecialchars($trx['nomor_meja']) ?>
-                                <?php else: ?>
-                                    Bungkus
-                                <?php endif; ?>
-                                <?php if ($trx['nama_pelanggan']): ?> · <?= htmlspecialchars($trx['nama_pelanggan']) ?><?php endif; ?>
-                                · <?= count($items) ?> item
-                            </div>
-                        </td>
-                        <td class="px-4 py-3.5 text-sm text-vibe-on-surface font-medium"><?= htmlspecialchars($trx['nama_kasir']) ?></td>
-                        <td class="px-4 py-3.5 text-sm text-vibe-on-surface-variant whitespace-nowrap"><?= date('d/m H:i', strtotime($trx['waktu_bayar'])) ?></td>
-                        <td class="px-4 py-3.5 text-right text-sm text-vibe-on-surface-variant hidden md:table-cell"><?= formatRupiah((float)$trx['subtotal']) ?></td>
-                        <td class="px-4 py-3.5 text-right text-sm <?= (float)$trx['diskon_nominal'] > 0 ? 'text-vibe-error' : 'text-vibe-on-surface-variant' ?> hidden lg:table-cell">
-                            <?= (float)$trx['diskon_nominal'] > 0 ? '-' . formatRupiah((float)$trx['diskon_nominal']) : '-' ?>
-                        </td>
-                        <td class="px-4 py-3.5 text-right font-bold text-sm text-vibe-primary"><?= formatRupiah((float)$trx['total_harga']) ?></td>
-                        <td class="px-4 py-3.5 text-center">
-                            <span class="inline-block px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider <?= $trx['metode_pembayaran'] === 'cash' ? 'bg-vibe-secondary-container text-vibe-secondary' : ($trx['metode_pembayaran'] === 'qris' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700') ?>">
-                                <?= $trx['metode_pembayaran'] === 'cash' ? 'Tunai' : ($trx['metode_pembayaran'] === 'qris' ? 'QRIS' : 'Transfer') ?>
-                            </span>
-                        </td>
-                        <td class="px-4 py-3.5 text-center">
-                            <button @click="open = !open" class="p-1.5 text-vibe-on-surface-variant hover:text-vibe-on-surface transition-colors">
-                                <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <a :href="'<?= BASE_URL ?>/modules/kasir/struk.php?pesanan_id=<?= $trx['pesanan_id'] ?>'" target="_blank" class="text-[10px] font-bold text-vibe-on-surface-variant hover:underline ml-2" title="Cetak ulang">Nota</a>
-                        </td>
-                    </tr>
-                    <tr x-show="open" x-cloak>
-                        <td colspan="8" class="px-4 pb-4 pt-0">
-                            <div class="bg-vibe-surface-dim rounded-lg p-4 space-y-2">
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs pb-3 border-b border-vibe-outline/50">
-                                    <div>
-                                        <span class="text-vibe-on-surface-variant">Kasir</span>
-                                        <div class="font-bold text-vibe-on-surface"><?= htmlspecialchars($trx['nama_kasir']) ?></div>
-                                    </div>
-                                    <div>
-                                        <span class="text-vibe-on-surface-variant">Waktu</span>
-                                        <div class="font-bold text-vibe-on-surface"><?= date('d M Y H:i', strtotime($trx['waktu_bayar'])) ?></div>
-                                    </div>
-                                    <?php if ((float)$trx['diskon_nominal'] > 0): ?>
-                                    <div>
-                                        <span class="text-vibe-on-surface-variant">Diskon (Promo)</span>
-                                        <div class="font-bold text-vibe-error">-<?= formatRupiah((float)$trx['diskon_nominal']) ?></div>
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if ((float)$trx['service_nominal'] > 0): ?>
-                                    <div>
-                                        <span class="text-vibe-on-surface-variant">Service</span>
-                                        <div class="font-bold text-vibe-secondary"><?= formatRupiah((float)$trx['service_nominal']) ?></div>
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if ((float)$trx['pajak_nominal'] > 0): ?>
-                                    <div>
-                                        <span class="text-vibe-on-surface-variant">Pajak (PB1)</span>
-                                        <div class="font-bold text-vibe-on-surface"><?= formatRupiah((float)$trx['pajak_nominal']) ?></div>
-                                    </div>
-                                    <?php endif; ?>
-                                    <div>
-                                        <span class="text-vibe-on-surface-variant">Dibayar</span>
-                                        <div class="font-bold text-vibe-on-surface"><?= formatRupiah((float)$trx['jumlah_bayar']) ?></div>
-                                    </div>
-                                    <?php if ((float)$trx['kembalian'] > 0): ?>
-                                    <div>
-                                        <span class="text-vibe-on-surface-variant">Kembalian</span>
-                                        <div class="font-bold text-vibe-error"><?= formatRupiah((float)$trx['kembalian']) ?></div>
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if ($trx['nama_pengirim'] || $trx['referensi']): ?>
-                                    <div class="col-span-2">
-                                        <span class="text-vibe-on-surface-variant">Transfer info</span>
-                                        <div class="font-bold text-vibe-on-surface"><?= htmlspecialchars($trx['nama_pengirim']) ?> · Ref: <?= htmlspecialchars($trx['referensi']) ?></div>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="text-xs space-y-1">
-                                    <div class="text-vibe-on-surface-variant font-bold uppercase tracking-wider text-[10px]">Item</div>
-                                    <?php foreach ($items as $item): ?>
-                                    <div class="flex items-center justify-between py-1">
-                                        <div class="flex items-center gap-2">
-                                            <span class="w-5 h-5 rounded bg-white border border-vibe-outline-variant flex items-center justify-center text-[10px] font-bold text-vibe-on-surface"><?= (int)$item['qty'] ?></span>
-                                            <span class="font-medium text-vibe-on-surface"><?= htmlspecialchars($item['nama_menu']) ?></span>
+                        <td colspan="8" class="px-0 py-0">
+                            <div class="px-4 py-3.5 flex items-center gap-4 cursor-pointer" @click="open = !open">
+                                <button class="p-1 text-vibe-outline-variant hover:text-vibe-on-surface transition-colors shrink-0">
+                                    <svg class="w-4 h-4 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </button>
+                                <div class="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-8 gap-2 md:gap-4 items-center text-sm">
+                                    <div class="md:col-span-2">
+                                        <div class="font-semibold text-vibe-on-surface truncate"><?= htmlspecialchars($trx['nomor_pesanan']) ?></div>
+                                        <div class="text-[11px] text-vibe-on-surface-variant">
+                                            <?= $trx['tipe_pesanan'] === 'dine_in' && $trx['nomor_meja'] ? 'Meja ' . htmlspecialchars($trx['nomor_meja']) : 'Bungkus' ?>
+                                            <?php if ($trx['nama_pelanggan']): ?> · <?= htmlspecialchars($trx['nama_pelanggan']) ?><?php endif; ?>
                                         </div>
-                                        <span class="text-vibe-on-surface-variant"><?= formatRupiah((float)$item['harga_satuan'] * (int)$item['qty']) ?></span>
                                     </div>
-                                    <?php endforeach; ?>
+                                    <div class="text-vibe-on-surface font-medium hidden md:block"><?= htmlspecialchars($trx['nama_kasir']) ?></div>
+                                    <div class="text-vibe-on-surface-variant whitespace-nowrap hidden md:block"><?= date('d/m H:i', strtotime($trx['waktu_bayar'])) ?></div>
+                                    <div class="text-right text-vibe-on-surface-variant hidden md:block"><?= formatRupiah((float)$trx['subtotal']) ?></div>
+                                    <div class="text-right <?= (float)$trx['diskon_nominal'] > 0 ? 'text-vibe-error' : 'text-vibe-on-surface-variant' ?> hidden md:block">
+                                        <?= (float)$trx['diskon_nominal'] > 0 ? '-' . formatRupiah((float)$trx['diskon_nominal']) : '-' ?>
+                                    </div>
+                                    <div class="text-right font-bold text-vibe-primary"><?= formatRupiah((float)$trx['total_harga']) ?></div>
+                                    <div class="text-right">
+                                        <span class="inline-block px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider <?= $trx['metode_pembayaran'] === 'cash' ? 'bg-vibe-secondary-container text-vibe-secondary' : ($trx['metode_pembayaran'] === 'qris' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700') ?>">
+                                            <?= $trx['metode_pembayaran'] === 'cash' ? 'Tunai' : ($trx['metode_pembayaran'] === 'qris' ? 'QRIS' : 'Transfer') ?>
+                                        </span>
+                                    </div>
+                                </div>
+                                <a href="<?= BASE_URL ?>/modules/kasir/struk.php?pesanan_id=<?= $trx['pesanan_id'] ?>" target="_blank" class="shrink-0 px-2 py-1 text-[10px] font-bold text-vibe-on-surface-variant border border-vibe-outline-variant rounded-md hover:bg-vibe-surface-dim hover:text-vibe-on-surface transition-colors" @click.stop>Nota</a>
+                            </div>
+                            <div x-show="open" x-cloak x-transition.opacity.duration.150ms>
+                                <div class="mx-4 mb-4 bg-vibe-surface-dim rounded-lg p-4 space-y-2">
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs pb-3 border-b border-vibe-outline/50">
+                                        <div>
+                                            <span class="text-vibe-on-surface-variant">Kasir</span>
+                                            <div class="font-bold text-vibe-on-surface"><?= htmlspecialchars($trx['nama_kasir']) ?></div>
+                                        </div>
+                                        <div>
+                                            <span class="text-vibe-on-surface-variant">Waktu</span>
+                                            <div class="font-bold text-vibe-on-surface"><?= date('d M Y H:i', strtotime($trx['waktu_bayar'])) ?></div>
+                                        </div>
+                                        <?php if ((float)$trx['diskon_nominal'] > 0): ?>
+                                        <div>
+                                            <span class="text-vibe-on-surface-variant">Diskon</span>
+                                            <div class="font-bold text-vibe-error">-<?= formatRupiah((float)$trx['diskon_nominal']) ?></div>
+                                        </div>
+                                        <?php endif; ?>
+                                        <?php if ((float)$trx['service_nominal'] > 0): ?>
+                                        <div>
+                                            <span class="text-vibe-on-surface-variant">Service</span>
+                                            <div class="font-bold text-vibe-secondary"><?= formatRupiah((float)$trx['service_nominal']) ?></div>
+                                        </div>
+                                        <?php endif; ?>
+                                        <?php if ((float)$trx['pajak_nominal'] > 0): ?>
+                                        <div>
+                                            <span class="text-vibe-on-surface-variant">Pajak (PB1)</span>
+                                            <div class="font-bold text-vibe-on-surface"><?= formatRupiah((float)$trx['pajak_nominal']) ?></div>
+                                        </div>
+                                        <?php endif; ?>
+                                        <div>
+                                            <span class="text-vibe-on-surface-variant">Dibayar</span>
+                                            <div class="font-bold text-vibe-on-surface"><?= formatRupiah((float)$trx['jumlah_bayar']) ?></div>
+                                        </div>
+                                        <?php if ((float)$trx['kembalian'] > 0): ?>
+                                        <div>
+                                            <span class="text-vibe-on-surface-variant">Kembali</span>
+                                            <div class="font-bold text-vibe-error"><?= formatRupiah((float)$trx['kembalian']) ?></div>
+                                        </div>
+                                        <?php endif; ?>
+                                        <?php if ($trx['nama_pengirim'] || $trx['referensi']): ?>
+                                        <div class="col-span-2">
+                                            <span class="text-vibe-on-surface-variant">Transfer</span>
+                                            <div class="font-bold text-vibe-on-surface"><?= htmlspecialchars($trx['nama_pengirim']) ?> · Ref: <?= htmlspecialchars($trx['referensi']) ?></div>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="text-xs space-y-1">
+                                        <div class="text-vibe-on-surface-variant font-bold uppercase tracking-wider text-[10px]">Item</div>
+                                        <?php foreach ($items as $item): ?>
+                                        <div class="flex items-center justify-between py-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="w-5 h-5 rounded bg-white border border-vibe-outline-variant flex items-center justify-center text-[10px] font-bold text-vibe-on-surface"><?= (int)$item['qty'] ?></span>
+                                                <span class="font-medium text-vibe-on-surface"><?= htmlspecialchars($item['nama_menu']) ?></span>
+                                            </div>
+                                            <span class="text-vibe-on-surface-variant"><?= formatRupiah((float)$item['harga_satuan'] * (int)$item['qty']) ?></span>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <?php if ($bukti): ?>
+                                    <div class="pt-2 border-t border-vibe-outline/50">
+                                        <div class="text-vibe-on-surface-variant font-bold uppercase tracking-wider text-[10px] mb-2">Bukti Transfer</div>
+                                        <a href="<?= BASE_URL ?>/assets/uploads/bukti/<?= htmlspecialchars($bukti) ?>" target="_blank" class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-vibe-outline-variant rounded-lg hover:border-vibe-on-surface transition-colors text-xs font-medium text-vibe-on-surface">
+                                            <svg class="w-4 h-4 text-vibe-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            Lihat Bukti Transfer
+                                        </a>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </td>

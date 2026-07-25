@@ -18,14 +18,23 @@ $telepon_toko   = $settings['telepon_toko'] ?? '';
 $cetak_otomatis = ($settings['cetak_otomatis'] ?? '1') === '1';
 
 // Ambil data pembayaran & pesanan
-$stmt = $pdo->prepare("SELECT p.*, b.metode_pembayaran, b.jumlah_bayar, b.kembalian, b.waktu_bayar, m.nomor_meja, u.nama_lengkap as nama_kasir
-                       FROM pesanan p 
-                       JOIN pembayaran b ON p.id = b.pesanan_id 
-                       LEFT JOIN meja m ON p.meja_id = m.id
-                       JOIN sesi_kasir s ON b.sesi_kasir_id = s.id
-                       JOIN users u ON s.kasir_id = u.id
-                       WHERE p.id = ? AND s.kasir_id = ?");
-$stmt->execute([$pesanan_id, $_SESSION['user_id']]);
+$sql = "SELECT p.*, b.metode_pembayaran, b.jumlah_bayar, b.kembalian, b.waktu_bayar, m.nomor_meja, u.nama_lengkap as nama_kasir, b.nama_pengirim, b.referensi
+        FROM pesanan p 
+        JOIN pembayaran b ON p.id = b.pesanan_id 
+        LEFT JOIN meja m ON p.meja_id = m.id
+        JOIN sesi_kasir s ON b.sesi_kasir_id = s.id
+        JOIN users u ON s.kasir_id = u.id
+        WHERE p.id = ?";
+$params = [$pesanan_id];
+
+// Admin bisa lihat struk siapa pun, kasir hanya shift sendiri
+if ($_SESSION['role'] !== 'admin') {
+    $sql .= " AND s.kasir_id = ?";
+    $params[] = $_SESSION['user_id'];
+}
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $order = $stmt->fetch();
 
 if (!$order) {
