@@ -495,7 +495,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </table>
         </div>
     </div>
-</div>
 
 <!-- ============ MODAL: FORM PENGELUARAN ============ -->
 <div x-show="showForm" @keydown.escape.window="showForm=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" x-transition style="display:none">
