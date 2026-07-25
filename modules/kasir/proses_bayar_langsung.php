@@ -66,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $subtotal = 0;
         $cartItems = [];
         $stmtMenu = $pdo->prepare("SELECT id, nama_menu, harga, status FROM menu WHERE id = ? AND is_active = 1 FOR UPDATE");
+        $stmtCekResep = $pdo->prepare("SELECT COUNT(*) FROM resep_menu WHERE menu_id = ?");
         foreach ($cart as $item) {
             $menuId = (int)($item['id'] ?? 0);
             $qty = max(0, (int)($item['qty'] ?? 0));
@@ -77,6 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $menuRow = $stmtMenu->fetch();
             if (!$menuRow || $menuRow['status'] !== 'tersedia') {
                 throw new Exception("Menu tidak tersedia.");
+            }
+
+            $stmtCekResep->execute([$menuId]);
+            if ((int)$stmtCekResep->fetchColumn() === 0) {
+                throw new Exception("Menu \"{$menuRow['nama_menu']}\" belum memiliki resep. Atur resep dulu.");
             }
 
             $harga = (float)$menuRow['harga'];

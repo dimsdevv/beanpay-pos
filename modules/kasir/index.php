@@ -46,10 +46,13 @@ $pajak_aktif = ($settings['aktifkan_pajak'] ?? '1') === '1';
 $categories = $pdo->query("SELECT * FROM kategori ORDER BY nama_kategori")->fetchAll();
 $menus = $pdo->query("
     SELECT m.*, k.nama_kategori,
-        (SELECT COUNT(*) FROM resep_menu rm
-         JOIN bahan_baku b ON rm.bahan_id = b.id
-         WHERE rm.menu_id = m.id AND b.stok_sekarang < rm.jumlah_dibutuhkan
-        ) as missing_ingredients
+        CASE WHEN (SELECT COUNT(*) FROM resep_menu WHERE menu_id = m.id) = 0
+             THEN 1
+             ELSE (SELECT COUNT(*) FROM resep_menu rm
+                   JOIN bahan_baku b ON rm.bahan_id = b.id
+                   WHERE rm.menu_id = m.id AND b.stok_sekarang < rm.jumlah_dibutuhkan)
+        END as missing_ingredients,
+        (SELECT COUNT(*) FROM resep_menu WHERE menu_id = m.id) as total_resep
     FROM menu m
     JOIN kategori k ON m.kategori_id = k.id
     WHERE m.is_active = 1
@@ -275,7 +278,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             </template>
                             <template x-if="menu.missing_ingredients > 0 && menu.status !== 'habis'">
                                 <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
-                                    <span class="px-2 py-1 bg-orange-500 text-white text-[9px] font-bold rounded uppercase tracking-wider">Bahan Habis</span>
+                                    <span class="px-2 py-1 bg-orange-500 text-white text-[9px] font-bold rounded uppercase tracking-wider" x-text="menu.total_resep === 0 ? 'Blm Ada Resep' : 'Bahan Habis'"></span>
                                 </div>
                             </template>
                         </div>
