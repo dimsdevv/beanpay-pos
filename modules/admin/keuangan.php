@@ -102,10 +102,11 @@ try {
         SELECT p.*, u.nama_lengkap AS input_nama
         FROM pengeluaran p
         LEFT JOIN users u ON u.id = p.input_by
-        WHERE DATE_FORMAT(p.tanggal, '%Y-%m') = ?
+        WHERE p.tanggal >= ? AND p.tanggal <= LAST_DAY(?)
         ORDER BY p.tanggal DESC, p.id DESC
     ");
-    $stmtExpenses->execute([$periode]);
+    $start_date = $periode . '-01';
+    $stmtExpenses->execute([$start_date, $start_date]);
     $expenses = $stmtExpenses->fetchAll();
 
     $expenseIds = array_column($expenses, 'id');
