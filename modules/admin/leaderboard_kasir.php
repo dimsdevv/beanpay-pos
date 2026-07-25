@@ -20,7 +20,7 @@ $kasirData = $pdo->prepare("
         COALESCE(AVG(s.total_pemasukan), 0) as avg_revenue_per_shift,
         COALESCE(MAX(s.total_pemasukan), 0) as best_shift_revenue
     FROM users u
-    INNER JOIN sesi_kasir s ON s.kasir_id = u.id AND s.status = 'tutup'
+    INNER JOIN sesi_kasir s ON s.kasir_id = u.id AND s.status IN ('buka', 'tutup')
     LEFT JOIN pembayaran b ON b.sesi_kasir_id = s.id
     WHERE DATE(s.waktu_buka) BETWEEN ? AND ?
     GROUP BY u.id
