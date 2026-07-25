@@ -8,179 +8,212 @@ requireRole(['admin']);
 requireCsrfToken();
 
 // ---------------------------------------------------------------
-// Pastikan tabel keuangan ada
+// Blok Try-Catch Utama untuk mencegah HTTP 500
 // ---------------------------------------------------------------
-$pdo->exec("
-    CREATE TABLE IF NOT EXISTS pengeluaran (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        tanggal DATE NOT NULL,
-        supplier VARCHAR(120) DEFAULT NULL,
-        kategori ENUM('pembukaan','operasional','lainnya') NOT NULL DEFAULT 'operasional',
-        keterangan TEXT,
-        metode_bayar ENUM('cash','qris','transfer') NOT NULL DEFAULT 'cash',
-        bukti VARCHAR(255) DEFAULT NULL,
-        total DECIMAL(14,2) NOT NULL DEFAULT 0.00,
-        stok_updated TINYINT(1) NOT NULL DEFAULT 0,
-        input_by INT DEFAULT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_tanggal (tanggal),
-        INDEX idx_kategori (kategori)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-");
-$pdo->exec("
-    CREATE TABLE IF NOT EXISTS pengeluaran_item (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        pengeluaran_id INT NOT NULL,
-        bahan_id INT DEFAULT NULL,
-        nama_bahan VARCHAR(120) NOT NULL,
-        qty DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-        satuan VARCHAR(50) DEFAULT '',
-        harga_satuan DECIMAL(14,2) NOT NULL DEFAULT 0.00,
-        subtotal DECIMAL(14,2) NOT NULL DEFAULT 0.00,
-        FOREIGN KEY (pengeluaran_id) REFERENCES pengeluaran(id) ON DELETE CASCADE,
-        INDEX idx_bahan (bahan_id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-");
-$pdo->exec("
-    CREATE TABLE IF NOT EXISTS anggaran_bulan (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        periode CHAR(7) NOT NULL UNIQUE,
-        nominal DECIMAL(14,2) NOT NULL DEFAULT 0.00
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-");
-
-// ---------------------------------------------------------------
-// Periode terpilih
-// ---------------------------------------------------------------
-$periode = $_GET['periode'] ?? date('Y-m');
-if (!preg_match('/^\d{4}-\d{2}$/', $periode)) $periode = date('Y-m');
-$periodeLabel = date('F Y', strtotime($periode . '-01'));
-
-// Daftar 12 bulan terakhir untuk selector
-$bulanOptions = [];
-for ($i = 0; $i < 12; $i++) {
-    $ts = strtotime(date('Y-m-01') . " -$i months");
-    $bulanOptions[] = [
-        'value' => date('Y-m', $ts),
-        'label' => date('M Y', $ts),
-    ];
-}
-
-// ---------------------------------------------------------------
-// Anggaran periode
-// ---------------------------------------------------------------
-$stmtBudget = $pdo->prepare("SELECT nominal FROM anggaran_bulan WHERE periode = ?");
-$stmtBudget->execute([$periode]);
-$budget = (float)($stmtBudget->fetchColumn() ?: 0);
-
-// ---------------------------------------------------------------
-// Daftar pengeluaran periode + nested items
-// ---------------------------------------------------------------
-$expenses = $pdo->prepare("
-    SELECT p.*, u.nama_lengkap AS input_nama
-    FROM pengeluaran p
-    LEFT JOIN users u ON u.id = p.input_by
-    WHERE DATE_FORMAT(p.tanggal, '%Y-%m') = ?
-    ORDER BY p.tanggal DESC, p.id DESC
-");
-$expenses->execute([$periode]);
-$expenses = $expenses->fetchAll();
-
-$expenseIds = array_column($expenses, 'id');
-$itemsByExpense = [];
-if (!empty($expenseIds)) {
-    $placeholders = rtrim(str_repeat('?,', count($expenseIds)), ',');
-    $stmtItems = $pdo->prepare("SELECT * FROM pengeluaran_item WHERE pengeluaran_id IN ($placeholders) ORDER BY id ASC");
-    $stmtItems->execute($expenseIds);
-    foreach ($stmtItems->fetchAll() as $it) {
-        $itemsByExpense[$it['pengeluaran_id']][] = $it;
-    }
-}
-foreach ($expenses as &$e) {
-    $e['items'] = $itemsByExpense[$e['id']] ?? [];
-}
-unset($e);
-
-// Ringkasan kategori & total
+$db_error = null;
+$budget = 0;
+$expenses = [];
 $totalBelanja = 0;
-$cat = ['pembukaan' => 0, 'operasional' => 0, 'lainnya' => 0];
-foreach ($expenses as $e) {
-    $totalBelanja += (float)$e['total'];
-    $cat[$e['kategori']] += (float)$e['total'];
-}
-$sisaBudget = $budget - $totalBelanja;
-$pctBudget = $budget > 0 ? round($totalBelanja / $budget * 100, 1) : 0;
-
-// Rata-rata per hari
-$hariIni = (int)date('j');
-$hariBulan = (int)date('t', strtotime($periode . '-01'));
-$hariAcuan = ($periode === date('Y-m')) ? max(1, $hariIni) : $hariBulan;
-$rataHari = $hariAcuan > 0 ? $totalBelanja / $hariAcuan : 0;
-
-// ---------------------------------------------------------------
-// Daftar bahan + harga terakhir (untuk auto-harga)
-// ---------------------------------------------------------------
-$bahanList = $pdo->query("
-    SELECT b.id, b.nama_bahan AS nama, b.satuan, b.harga_beli,
-        (SELECT pi.harga_satuan FROM pengeluaran_item pi
-         JOIN pengeluaran p2 ON pi.pengeluaran_id = p2.id
-         WHERE pi.bahan_id = b.id ORDER BY p2.tanggal DESC, p2.id DESC LIMIT 1) AS last_price
-    FROM bahan_baku b
-    ORDER BY b.nama_bahan ASC
-")->fetchAll();
-
-// ---------------------------------------------------------------
-// COGS per menu (HPP dari resep × harga beli bahan)
-// ---------------------------------------------------------------
-$menuHpp = $pdo->query("
-    SELECT m.id, m.nama_menu, m.harga,
-        COALESCE(SUM(rm.jumlah_dibutuhkan * b.harga_beli), 0) AS hpp
-    FROM menu m
-    LEFT JOIN resep_menu rm ON rm.menu_id = m.id
-    LEFT JOIN bahan_baku b ON b.id = rm.bahan_id
-    GROUP BY m.id, m.nama_menu, m.harga
-    ORDER BY (m.harga - COALESCE(SUM(rm.jumlah_dibutuhkan * b.harga_beli), 0)) DESC
-")->fetchAll();
-foreach ($menuHpp as &$m) {
-    $m['hpp'] = (float)$m['hpp'];
-    $m['harga'] = (float)$m['harga'];
-    $m['laba'] = $m['harga'] - $m['hpp'];
-    $m['margin'] = $m['harga'] > 0 ? round($m['laba'] / $m['harga'] * 100, 1) : 0;
-}
-unset($m);
-
-// ---------------------------------------------------------------
-// Posisi laba periode: Omzet - HPP aktual - Pengeluaran
-// ---------------------------------------------------------------
-$hppMap = [];
-foreach ($menuHpp as $m) $hppMap[$m['id']] = $m['hpp'];
-
-$omzet = (float)$pdo->query("
-    SELECT COALESCE(SUM(pb.jumlah_bayar), 0)
-    FROM pembayaran pb
-    WHERE DATE(pb.waktu_bayar) BETWEEN '{$periode}-01' AND LAST_DAY('{$periode}-01')
-")->fetchColumn();
-
-$cogsBulanRows = $pdo->query("
-    SELECT dp.menu_id, SUM(dp.qty) AS qty
-    FROM detail_pesanan dp
-    JOIN pesanan p ON dp.pesanan_id = p.id
-    JOIN pembayaran pb ON pb.pesanan_id = p.id
-    WHERE p.status_pesanan IN ('dibayar','selesai','diproses')
-      AND DATE(pb.waktu_bayar) BETWEEN '{$periode}-01' AND LAST_DAY('{$periode}-01')
-    GROUP BY dp.menu_id
-")->fetchAll();
+$rataHari = 0;
+$sisaBudget = 0;
+$pctBudget = 0;
+$hariAcuan = 1;
 $cogsBulan = 0;
-foreach ($cogsBulanRows as $r) {
-    $cogsBulan += (float)($hppMap[$r['menu_id']] ?? 0) * (float)$r['qty'];
+$cat = ['pembukaan' => 0, 'operasional' => 0, 'lainnya' => 0];
+$bahanList = [];
+$menuHpp = [];
+$bulanOptions = [];
+$periodeLabel = '';
+
+try {
+    // ---------------------------------------------------------------
+    // Pastikan tabel keuangan ada
+    // ---------------------------------------------------------------
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS pengeluaran (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tanggal DATE NOT NULL,
+            supplier VARCHAR(120) DEFAULT NULL,
+            kategori ENUM('pembukaan','operasional','lainnya') NOT NULL DEFAULT 'operasional',
+            keterangan TEXT,
+            metode_bayar ENUM('cash','qris','transfer') NOT NULL DEFAULT 'cash',
+            bukti VARCHAR(255) DEFAULT NULL,
+            total DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+            stok_updated TINYINT(1) NOT NULL DEFAULT 0,
+            input_by INT DEFAULT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_tanggal (tanggal),
+            INDEX idx_kategori (kategori)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+    ");
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS pengeluaran_item (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            pengeluaran_id INT NOT NULL,
+            bahan_id INT DEFAULT NULL,
+            nama_bahan VARCHAR(120) NOT NULL,
+            qty DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+            satuan VARCHAR(50) DEFAULT '',
+            harga_satuan DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+            subtotal DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+            FOREIGN KEY (pengeluaran_id) REFERENCES pengeluaran(id) ON DELETE CASCADE,
+            INDEX idx_bahan (bahan_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+    ");
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS anggaran_bulan (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            periode CHAR(7) NOT NULL UNIQUE,
+            nominal DECIMAL(14,2) NOT NULL DEFAULT 0.00
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+    ");
+
+    // ---------------------------------------------------------------
+    // Periode terpilih
+    // ---------------------------------------------------------------
+    $periode = $_GET['periode'] ?? date('Y-m');
+    if (!preg_match('/^\d{4}-\d{2}$/', $periode)) $periode = date('Y-m');
+    $periodeLabel = date('F Y', strtotime($periode . '-01'));
+
+    for ($i = 0; $i < 12; $i++) {
+        $ts = strtotime(date('Y-m-01') . " -$i months");
+        $bulanOptions[] = [
+            'value' => date('Y-m', $ts),
+            'label' => date('M Y', $ts),
+        ];
+    }
+
+    // ---------------------------------------------------------------
+    // Anggaran periode
+    // ---------------------------------------------------------------
+    $stmtBudget = $pdo->prepare("SELECT nominal FROM anggaran_bulan WHERE periode = ?");
+    $stmtBudget->execute([$periode]);
+    $budget = (float)($stmtBudget->fetchColumn() ?: 0);
+
+    // ---------------------------------------------------------------
+    // Daftar pengeluaran periode + nested items
+    // ---------------------------------------------------------------
+    $stmtExpenses = $pdo->prepare("
+        SELECT p.*, u.nama_lengkap AS input_nama
+        FROM pengeluaran p
+        LEFT JOIN users u ON u.id = p.input_by
+        WHERE DATE_FORMAT(p.tanggal, '%Y-%m') = ?
+        ORDER BY p.tanggal DESC, p.id DESC
+    ");
+    $stmtExpenses->execute([$periode]);
+    $expenses = $stmtExpenses->fetchAll();
+
+    $expenseIds = array_column($expenses, 'id');
+    $itemsByExpense = [];
+    if (!empty($expenseIds)) {
+        $placeholders = rtrim(str_repeat('?,', count($expenseIds)), ',');
+        $stmtItems = $pdo->prepare("SELECT * FROM pengeluaran_item WHERE pengeluaran_id IN ($placeholders) ORDER BY id ASC");
+        $stmtItems->execute($expenseIds);
+        foreach ($stmtItems->fetchAll() as $it) {
+            $itemsByExpense[$it['pengeluaran_id']][] = $it;
+        }
+    }
+    foreach ($expenses as &$e) {
+        $e['items'] = $itemsByExpense[$e['id']] ?? [];
+    }
+    unset($e);
+
+    // Ringkasan kategori & total
+    foreach ($expenses as $e) {
+        $totalBelanja += (float)$e['total'];
+        $cat[$e['kategori']] += (float)$e['total'];
+    }
+    $sisaBudget = $budget - $totalBelanja;
+    $pctBudget = $budget > 0 ? round($totalBelanja / $budget * 100, 1) : 0;
+
+    $hariIni = (int)date('j');
+    $hariBulan = (int)date('t', strtotime($periode . '-01'));
+    $hariAcuan = ($periode === date('Y-m')) ? max(1, $hariIni) : $hariBulan;
+    $rataHari = $hariAcuan > 0 ? $totalBelanja / $hariAcuan : 0;
+
+    // ---------------------------------------------------------------
+    // Daftar bahan + harga terakhir
+    // ---------------------------------------------------------------
+    $bahanList = $pdo->query("
+        SELECT b.id, b.nama_bahan AS nama, b.satuan, b.harga_beli,
+            (SELECT pi.harga_satuan FROM pengeluaran_item pi
+             JOIN pengeluaran p2 ON pi.pengeluaran_id = p2.id
+             WHERE pi.bahan_id = b.id ORDER BY p2.tanggal DESC, p2.id DESC LIMIT 1) AS last_price
+        FROM bahan_baku b
+        ORDER BY b.nama_bahan ASC
+    ")->fetchAll();
+
+    // ---------------------------------------------------------------
+    // COGS per menu
+    // ---------------------------------------------------------------
+    $menuHpp = $pdo->query("
+        SELECT m.id, m.nama_menu, m.harga,
+            COALESCE(SUM(rm.jumlah_dibutuhkan * b.harga_beli), 0) AS hpp
+        FROM menu m
+        LEFT JOIN resep_menu rm ON rm.menu_id = m.id
+        LEFT JOIN bahan_baku b ON b.id = rm.bahan_id
+        GROUP BY m.id, m.nama_menu, m.harga
+        ORDER BY (m.harga - COALESCE(SUM(rm.jumlah_dibutuhkan * b.harga_beli), 0)) DESC
+    ")->fetchAll();
+    
+    foreach ($menuHpp as &$m) {
+        $m['hpp'] = (float)$m['hpp'];
+        $m['harga'] = (float)$m['harga'];
+        $m['laba'] = $m['harga'] - $m['hpp'];
+        $m['margin'] = $m['harga'] > 0 ? round($m['laba'] / $m['harga'] * 100, 1) : 0;
+    }
+    unset($m);
+
+    $hppMap = [];
+    foreach ($menuHpp as $m) $hppMap[$m['id']] = $m['hpp'];
+
+    $omzet = (float)$pdo->query("
+        SELECT COALESCE(SUM(pb.jumlah_bayar), 0)
+        FROM pembayaran pb
+        WHERE DATE(pb.waktu_bayar) BETWEEN '{$periode}-01' AND LAST_DAY('{$periode}-01')
+    ")->fetchColumn();
+
+    $cogsBulanRows = $pdo->query("
+        SELECT dp.menu_id, SUM(dp.qty) AS qty
+        FROM detail_pesanan dp
+        JOIN pesanan p ON dp.pesanan_id = p.id
+        JOIN pembayaran pb ON pb.pesanan_id = p.id
+        WHERE p.status_pesanan IN ('dibayar','selesai','diproses')
+          AND DATE(pb.waktu_bayar) BETWEEN '{$periode}-01' AND LAST_DAY('{$periode}-01')
+        GROUP BY dp.menu_id
+    ")->fetchAll();
+    
+    foreach ($cogsBulanRows as $r) {
+        $cogsBulan += (float)($hppMap[$r['menu_id']] ?? 0) * (float)$r['qty'];
+    }
+    $labaKotor = $omzet - $cogsBulan - $totalBelanja;
+
+} catch (PDOException $e) {
+    $db_error = $e->getMessage();
 }
-$labaKotor = $omzet - $cogsBulan - $totalBelanja;
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar.php';
 ?>
 
-<div x-data="keuanganApp()" class="space-y-6">
+<div class="space-y-6">
+    <?php if ($db_error): ?>
+        <div class="bg-vibe-error-container text-vibe-error p-6 rounded-xl border border-vibe-error/30 animate-fade-in">
+            <div class="flex items-start gap-4">
+                <div class="p-2 bg-vibe-error/10 rounded-lg shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold font-display mb-1">Gagal Memuat Data Keuangan (HTTP 500 Dicegah)</h2>
+                    <p class="text-sm opacity-90 mb-3">Terdapat masalah pada database. Kemungkinan tabel belum dibuat atau user database tidak memiliki hak akses (CREATE).</p>
+                    <div class="p-3 bg-white/50 border border-vibe-error/20 rounded-lg font-mono text-xs overflow-x-auto">
+                        <?= htmlspecialchars($db_error) ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php else: ?>
+        <div x-data="keuanganApp()">
 
     <!-- Header -->
     <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
@@ -661,6 +694,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <button type="button" @click="submitBudget()" :disabled="savingBudget" class="flex-1 py-2.5 rounded-lg bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors active:scale-[0.99] disabled:opacity-60" x-text="savingBudget ? 'Menyimpan…' : 'Simpan'"></button>
         </div>
     </div>
+</div>
+
+    <?php endif; ?>
 </div>
 
 <script>
