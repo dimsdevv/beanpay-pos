@@ -19,6 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $meja_id = !empty($_POST['meja_id']) ? (int)$_POST['meja_id'] : null;
         $nama_pelanggan = $_POST['nama_pelanggan'] ?? '';
         $metode_pembayaran = $_POST['metode_pembayaran'] ?? 'cash';
+        if (!in_array($metode_pembayaran, ['cash', 'qris', 'transfer'], true)) {
+            throw new Exception('Metode pembayaran tidak valid.');
+        }
         $jumlah_bayar = (float)($_POST['jumlah_bayar'] ?? 0);
         $promo_id = !empty($_POST['promo_id']) ? (int)$_POST['promo_id'] : null;
 

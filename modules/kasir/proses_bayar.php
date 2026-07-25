@@ -8,6 +8,11 @@ requireCsrfToken();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pesanan_id = (int)$_POST['pesanan_id'] ?? 0;
     $metode_pembayaran = $_POST['metode_pembayaran'] ?? '';
+    if (!in_array($metode_pembayaran, ['cash', 'qris', 'transfer'], true)) {
+        $_SESSION['error'] = 'Metode pembayaran tidak valid.';
+        header('Location: ' . BASE_URL . '/modules/kasir/index.php');
+        exit;
+    }
     $jumlah_bayar = (float)($_POST['jumlah_bayar'] ?? 0);
     $promo_id = !empty($_POST['promo_id']) ? (int)$_POST['promo_id'] : null;
     

@@ -1,8 +1,15 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./**/*.php",
-    "./**/*.html",
+    "./*.php",
+    "./modules/**/*.php",
+    "./includes/**/*.php",
+    "./database/**/*.php",
+    "./assets/**/*.js"
+  ],
+  safelist: [
+    'animate-fade-in',
+    'animate-fade-up'
   ],
   theme: {
     extend: {

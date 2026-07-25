@@ -201,8 +201,12 @@ $items = $stmtItems->fetchAll();
         
         <div class="divider"></div>
         
+        <?php
+        $metodeStrukMap = ['cash' => 'TUNAI', 'qris' => 'QRIS', 'transfer' => 'TRANSFER', 'debit' => 'TRANSFER'];
+        $metodeStruk = $metodeStrukMap[$order['metode_pembayaran']] ?? strtoupper($order['metode_pembayaran']);
+        ?>
         <div class="flex-between mb-2">
-            <span>Pembayaran (<?= strtoupper($order['metode_pembayaran']) ?>):</span>
+            <span>Pembayaran (<?= $metodeStruk ?>):</span>
             <span><?= number_format($order['jumlah_bayar'], 0, ',', '.') ?></span>
         </div>
         <div class="flex-between mb-2">

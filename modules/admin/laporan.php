@@ -207,16 +207,18 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
             <div class="space-y-4">
                 <?php 
-                $metodeColors = ['cash'=>['bg-theme-ocean','text-theme-ocean'],'qris'=>['bg-theme-twilight','text-theme-twilight'],'debit'=>['bg-theme-sun','text-theme-sun']];
+                $metodeColors = ['cash'=>['bg-theme-ocean','text-theme-ocean'],'qris'=>['bg-theme-twilight','text-theme-twilight'],'transfer'=>['bg-theme-sun','text-theme-sun'],'debit'=>['bg-theme-sun','text-theme-sun']];
+                $metodeLabelMap = ['cash'=>'Tunai','qris'=>'QRIS','transfer'=>'Transfer','debit'=>'Transfer'];
                 foreach($metodeData as $m): 
                 $colors = $metodeColors[$m['metode_pembayaran']] ?? ['bg-gray-500','text-gray-600'];
+                $labelMetode = $metodeLabelMap[$m['metode_pembayaran']] ?? strtoupper($m['metode_pembayaran']);
                 ?>
                 <div class="flex justify-between items-center group">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
                             <div class="w-3.5 h-3.5 rounded-full <?= $colors[0] ?>"></div>
                         </div>
-                        <span class="text-sm font-bold text-gray-700 uppercase tracking-wide"><?= $m['metode_pembayaran'] ?></span>
+                        <span class="text-sm font-bold text-gray-700 uppercase tracking-wide"><?= $labelMetode ?></span>
                     </div>
                     <div class="text-right">
                         <div class="font-black text-sm text-theme-evergreen"><?= formatRupiah($m['total']) ?></div>
@@ -512,6 +514,7 @@ document.addEventListener('alpine:init', () => {
             const colors = {
                 'cash': 'bg-theme-ocean/10 text-theme-ocean border border-theme-ocean/20',
                 'qris': 'bg-theme-twilight/10 text-theme-twilight border border-theme-twilight/20',
+                'transfer': 'bg-theme-sun/10 text-theme-sun border border-theme-sun/20',
                 'debit': 'bg-theme-sun/10 text-theme-sun border border-theme-sun/20'
             };
             return colors[method] || 'bg-gray-100 text-gray-500';

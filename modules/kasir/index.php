@@ -475,6 +475,23 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         </div>
                     </div>
 
+                    <div x-show="paymentMethod === 'transfer'" x-transition.opacity.duration.150ms class="bg-vibe-surface-dim border border-vibe-outline-variant rounded-lg p-3 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest">Transfer ke</div>
+                            <span class="px-1.5 py-0.5 rounded bg-white border border-vibe-outline-variant text-[10px] font-bold text-vibe-on-surface">BCA</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="font-display font-bold text-base text-vibe-on-surface tracking-tight tabular-nums">5142777011</div>
+                                <div class="text-[11px] text-vibe-on-surface-variant font-medium">a.n. Budi Mulyana</div>
+                            </div>
+                            <button type="button" @click="copyRekening()" class="shrink-0 px-2.5 py-1.5 bg-white border border-vibe-outline-variant rounded-md text-[10px] font-bold text-vibe-on-surface hover:border-vibe-on-surface transition-colors active:scale-[0.98]" x-text="rekeningCopied ? 'Disalin' : 'Salin'"></button>
+                        </div>
+                        <div class="text-[11px] text-vibe-on-surface-variant leading-snug border-t border-vibe-outline-variant/60 pt-2">
+                            Transfer <span class="font-bold text-vibe-on-surface" x-text="formatRupiah(grandTotal)"></span>, lalu konfirmasi bayar.
+                        </div>
+                    </div>
+
                     <div x-show="paymentIssue" x-transition.opacity.duration.150ms class="flex items-start gap-2 rounded-lg border border-vibe-outline-variant bg-vibe-surface-dim px-3 py-2">
                         <div class="w-5 h-5 rounded-full bg-white border border-vibe-outline-variant flex items-center justify-center shrink-0 mt-0.5">
                             <svg class="w-3.5 h-3.5 text-vibe-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -520,6 +537,7 @@ document.addEventListener('alpine:init', () => {
         // ── Payment ──
         paymentMethod: 'cash',
         amountReceived: 0,
+        rekeningCopied: false,
         
         // ── Promo ──
         promoCode: '',
@@ -531,7 +549,7 @@ document.addEventListener('alpine:init', () => {
         methods: [
             { id: 'cash', label: 'Tunai', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>' },
             { id: 'qris', label: 'QRIS', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>' },
-            { id: 'debit', label: 'Debit', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>' },
+            { id: 'transfer', label: 'Transfer', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' },
         ],
 
         // ── Low stock details (menu_id -> [{nama, stok, butuh, satuan}]) ──
@@ -768,7 +786,16 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ── Payment ──
-        setPaymentMethod(m) { this.paymentMethod = m; this.syncAmount(); },
+        setPaymentMethod(m) { this.paymentMethod = m; this.rekeningCopied = false; this.syncAmount(); },
+        async copyRekening() {
+            try {
+                await navigator.clipboard.writeText('5142777011');
+                this.rekeningCopied = true;
+                setTimeout(() => { this.rekeningCopied = false; }, 2000);
+            } catch (e) {
+                this.rekeningCopied = false;
+            }
+        },
         get changeAmount() { return this.paymentMethod === 'cash' ? this.amountReceived - this.grandTotal : 0; },
         getQuickCashOptions() {
             const t = this.grandTotal;

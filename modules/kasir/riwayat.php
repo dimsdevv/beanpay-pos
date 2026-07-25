@@ -85,9 +85,10 @@ if (!$activeSesi) {
 }
 
 $metodeWarna = [
-    'cash'  => ['badge' => 'bg-vibe-secondary-container text-vibe-secondary', 'label' => 'Tunai'],
-    'qris'  => ['badge' => 'bg-purple-50 text-purple-700', 'label' => 'QRIS'],
-    'debit' => ['badge' => 'bg-blue-50 text-blue-700', 'label' => 'Debit'],
+    'cash'     => ['badge' => 'bg-vibe-secondary-container text-vibe-secondary', 'label' => 'Tunai'],
+    'qris'     => ['badge' => 'bg-purple-50 text-purple-700', 'label' => 'QRIS'],
+    'transfer' => ['badge' => 'bg-blue-50 text-blue-700', 'label' => 'Transfer'],
+    'debit'    => ['badge' => 'bg-blue-50 text-blue-700', 'label' => 'Transfer'],
 ];
 
 require_once __DIR__ . '/../../includes/sidebar.php';
@@ -474,11 +475,11 @@ document.addEventListener('alpine:init', () => {
         },
 
         getMetodeBadge(m) {
-            const map = { 'cash': 'bg-vibe-secondary-container text-vibe-secondary', 'qris': 'bg-purple-50 text-purple-700', 'debit': 'bg-blue-50 text-blue-700' };
+            const map = { 'cash': 'bg-vibe-secondary-container text-vibe-secondary', 'qris': 'bg-purple-50 text-purple-700', 'transfer': 'bg-blue-50 text-blue-700', 'debit': 'bg-blue-50 text-blue-700' };
             return map[m] || 'bg-vibe-surface-dim text-vibe-on-surface-variant';
         },
         getMetodeLabel(m) {
-            const map = { 'cash': 'Tunai', 'qris': 'QRIS', 'debit': 'Debit' };
+            const map = { 'cash': 'Tunai', 'qris': 'QRIS', 'transfer': 'Transfer', 'debit': 'Transfer' };
             return map[m] || m;
         },
         formatRp(a) {
