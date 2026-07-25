@@ -4,6 +4,8 @@ require_once __DIR__ . '/../../includes/auth.php';
 
 requireRole(['kasir', 'admin']);
 
+ensureTransferColumns();
+
 $page_title = 'Riwayat Transaksi';
 require_once __DIR__ . '/../../includes/header.php';
 

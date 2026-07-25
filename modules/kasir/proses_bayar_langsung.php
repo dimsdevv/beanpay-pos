@@ -22,6 +22,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($metode_pembayaran, ['cash', 'qris', 'transfer'], true)) {
             throw new Exception('Metode pembayaran tidak valid.');
         }
+
+        $nama_pengirim = '';
+        $referensi = '';
+        $bukti_transfer = null;
+        if ($metode_pembayaran === 'transfer') {
+            $nama_pengirim = trim($_POST['nama_pengirim'] ?? '');
+            $referensi = trim($_POST['referensi'] ?? '');
+            if ($nama_pengirim === '') throw new Exception('Nama pengirim wajib diisi.');
+            if ($referensi === '') throw new Exception('Nomor referensi wajib diisi.');
+
+            ensureTransferColumns();
+            $bukti_transfer = handleTransferUpload($_FILES['bukti_transfer'] ?? null, 'tf_' . date('Hi'));
+            if (!$bukti_transfer) throw new Exception('Bukti transfer wajib diupload.');
+        }
+
         $jumlah_bayar = (float)($_POST['jumlah_bayar'] ?? 0);
         $promo_id = !empty($_POST['promo_id']) ? (int)$_POST['promo_id'] : null;
 
@@ -174,8 +189,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare("UPDATE pesanan SET stock_deduction_done = 1 WHERE id = ?")->execute([$pesanan_id]);
 
         // 7. Insert Pembayaran
-        $stmtBayar = $pdo->prepare("INSERT INTO pembayaran (pesanan_id, sesi_kasir_id, metode_pembayaran, jumlah_bayar, kembalian, waktu_bayar) VALUES (?, ?, ?, ?, ?, NOW())");
-        $stmtBayar->execute([$pesanan_id, $sesi_id, $metode_pembayaran, $jumlah_bayar, $kembalian]);
+        $stmtBayar = $pdo->prepare("INSERT INTO pembayaran (pesanan_id, sesi_kasir_id, metode_pembayaran, jumlah_bayar, kembalian, nama_pengirim, referensi, bukti_transfer, waktu_bayar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+        $stmtBayar->execute([$pesanan_id, $sesi_id, $metode_pembayaran, $jumlah_bayar, $kembalian,
+            $nama_pengirim ?: null, $referensi ?: null, $bukti_transfer]);
 
         // 7b. Update status pesanan jadi dibayar
         $pdo->prepare("UPDATE pesanan SET status_pesanan = 'dibayar' WHERE id = ?")->execute([$pesanan_id]);

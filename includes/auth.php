@@ -119,6 +119,38 @@ function ensureAuditTable(): void {
     }
 }
 
+function ensureTransferColumns(): void {
+    global $pdo;
+    foreach (['nama_pengirim' => 'VARCHAR(100)', 'referensi' => 'VARCHAR(100)', 'bukti_transfer' => 'VARCHAR(255)'] as $col => $type) {
+        try {
+            $pdo->query("SELECT $col FROM pembayaran LIMIT 0");
+        } catch (Exception $e) {
+            $pdo->exec("ALTER TABLE pembayaran ADD COLUMN $col $type DEFAULT NULL");
+        }
+    }
+}
+
+function handleTransferUpload(?array $file, string $prefix = 'tf'): ?string {
+    if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return null;
+    if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) throw new RuntimeException('Upload bukti gagal.');
+    if (($file['size'] ?? 0) > 2 * 1024 * 1024) throw new RuntimeException('Ukuran bukti maksimal 2MB.');
+
+    $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+    if (!isset($allowed[$mime]) || !getimagesize($file['tmp_name'])) {
+        throw new RuntimeException('Format bukti harus jpg, png, atau webp.');
+    }
+
+    $dir = __DIR__ . '/../assets/uploads/bukti/';
+    if (!is_dir($dir)) mkdir($dir, 0755, true);
+
+    $name = $prefix . '_' . bin2hex(random_bytes(12)) . '.' . $allowed[$mime];
+    if (!move_uploaded_file($file['tmp_name'], $dir . $name)) {
+        throw new RuntimeException('Bukti gagal disimpan.');
+    }
+    return $name;
+}
+
 function logAuditAction(string $action, string $entityType, ?int $entityId = null, ?string $details = null): void {
     global $pdo;
     try {

@@ -339,7 +339,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
         </div>
 
-        <form action="proses_bayar_langsung.php" method="POST" id="formPOS" class="flex flex-col flex-1 overflow-hidden">
+        <form action="proses_bayar_langsung.php" method="POST" id="formPOS" class="flex flex-col flex-1 overflow-hidden" enctype="multipart/form-data">
             <?= csrfField() ?>
             <input type="hidden" name="cart_data" :value="JSON.stringify(cart)">
             <input type="hidden" name="tipe_pesanan" :value="orderType">
@@ -475,20 +475,61 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         </div>
                     </div>
 
-                    <div x-show="paymentMethod === 'transfer'" x-transition.opacity.duration.150ms class="bg-vibe-surface-dim border border-vibe-outline-variant rounded-lg p-3 space-y-2">
+                    <div x-show="paymentMethod === 'transfer'" x-transition.opacity.duration.150ms class="bg-white border border-vibe-outline-variant rounded-lg p-3 space-y-2.5">
+                        <!-- Bank Info -->
                         <div class="flex items-center justify-between gap-2">
-                            <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest">Transfer ke</div>
-                            <span class="px-1.5 py-0.5 rounded bg-white border border-vibe-outline-variant text-[10px] font-bold text-vibe-on-surface">BCA</span>
-                        </div>
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="min-w-0">
-                                <div class="font-display font-bold text-base text-vibe-on-surface tracking-tight tabular-nums">5142777011</div>
-                                <div class="text-[11px] text-vibe-on-surface-variant font-medium">a.n. Budi Mulyana</div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-vibe-on-surface-variant font-medium">BCA</div>
+                                    <div class="font-display font-bold text-vibe-on-surface tracking-tight tabular-nums text-sm leading-tight">5142777011</div>
+                                </div>
                             </div>
-                            <button type="button" @click="copyRekening()" class="shrink-0 px-2.5 py-1.5 bg-white border border-vibe-outline-variant rounded-md text-[10px] font-bold text-vibe-on-surface hover:border-vibe-on-surface transition-colors active:scale-[0.98]" x-text="rekeningCopied ? 'Disalin' : 'Salin'"></button>
+                            <div class="text-right">
+                                <button type="button" @click="copyRekening()" class="px-2.5 py-1.5 bg-vibe-on-surface text-white rounded-md text-[10px] font-bold transition-colors active:scale-[0.98]" x-text="rekeningCopied ? 'Disalin' : 'Salin'"></button>
+                                <div class="text-[10px] text-vibe-on-surface-variant mt-0.5">a.n. Budi Mulyana</div>
+                            </div>
                         </div>
-                        <div class="text-[11px] text-vibe-on-surface-variant leading-snug border-t border-vibe-outline-variant/60 pt-2">
-                            Transfer <span class="font-bold text-vibe-on-surface" x-text="formatRupiah(grandTotal)"></span>, lalu konfirmasi bayar.
+
+                        <div class="text-[11px] text-vibe-on-surface-variant px-0.5 -mt-1">Transfer <span class="font-bold" x-text="formatRupiah(grandTotal)"></span> ke rekening di atas.</div>
+
+                        <div class="space-y-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest mb-1">Nama Pengirim</label>
+                                <input type="text" name="nama_pengirim" x-model="transferNama"
+                                       placeholder="Cth: Budi Mulyana"
+                                       class="w-full px-3 py-2 bg-white border border-vibe-outline-variant rounded-md text-sm font-medium text-vibe-on-surface focus:outline-none focus:border-vibe-on-surface transition-colors placeholder-vibe-outline-variant">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest mb-1">Nomor Referensi / Berita</label>
+                                <input type="text" name="referensi" x-model="transferRef"
+                                       placeholder="Cth: 271890 / Pembayaran"
+                                       class="w-full px-3 py-2 bg-white border border-vibe-outline-variant rounded-md text-sm font-medium text-vibe-on-surface focus:outline-none focus:border-vibe-on-surface transition-colors placeholder-vibe-outline-variant">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest mb-1">Upload Bukti Transfer</label>
+                                <div class="relative flex items-center gap-2 p-2 bg-vibe-surface-dim border border-dashed border-vibe-outline-variant rounded-md cursor-pointer hover:border-vibe-on-surface transition-colors"
+                                     @click="$refs.buktiInput.click()">
+                                    <template x-if="!transferBuktiPreview">
+                                        <div class="flex items-center gap-2 w-full">
+                                            <svg class="w-5 h-5 text-vibe-outline-variant shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            <span class="text-[11px] text-vibe-on-surface-variant font-medium">Ketuk untuk unggah bukti</span>
+                                        </div>
+                                    </template>
+                                    <template x-if="transferBuktiPreview">
+                                        <div class="flex items-center gap-2 w-full">
+                                            <img :src="transferBuktiPreview" class="w-10 h-10 rounded object-cover border border-vibe-outline-variant shrink-0">
+                                            <span class="text-[11px] text-vibe-on-surface-variant truncate flex-1" x-text="transferBuktiNama || 'Bukti terunggah'"></span>
+                                            <button type="button" @click.stop="resetBukti()" class="p-1 text-vibe-on-surface-variant hover:text-vibe-error rounded transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                                <input type="file" name="bukti_transfer" x-ref="buktiInput" class="hidden" accept="image/*" @change="previewBukti($event)">
+                            </div>
                         </div>
                     </div>
 
@@ -792,9 +833,21 @@ document.addEventListener('alpine:init', () => {
                 await navigator.clipboard.writeText('5142777011');
                 this.rekeningCopied = true;
                 setTimeout(() => { this.rekeningCopied = false; }, 2000);
-            } catch (e) {
-                this.rekeningCopied = false;
-            }
+            } catch (e) { this.rekeningCopied = false; }
+        },
+        previewBukti(e) {
+            const f = e.target.files?.[0];
+            if (!f) return;
+            this.transferBuktiNama = f.name;
+            const r = new FileReader();
+            r.onload = (ev) => { this.transferBuktiPreview = ev.target.result; };
+            r.readAsDataURL(f);
+        },
+        resetBukti() {
+            this.transferBuktiPreview = null;
+            this.transferBuktiNama = '';
+            const inp = this.$refs?.buktiInput;
+            if (inp) inp.value = '';
         },
         get changeAmount() { return this.paymentMethod === 'cash' ? this.amountReceived - this.grandTotal : 0; },
         getQuickCashOptions() {
@@ -822,6 +875,11 @@ document.addEventListener('alpine:init', () => {
             }
             if (this.paymentMethod === 'cash' && this.amountReceived < this.grandTotal) {
                 return { title: 'Uang tunai kurang', detail: 'Kurang ' + this.formatRupiah(this.grandTotal - this.amountReceived) + ' dari total tagihan.' };
+            }
+            if (this.paymentMethod === 'transfer') {
+                if (!this.transferNama.trim()) return { title: 'Nama pengirim belum diisi', detail: 'Isi nama pengirim untuk verifikasi transfer.' };
+                if (!this.transferRef.trim()) return { title: 'Nomor referensi belum diisi', detail: 'Isi nomor referensi dari bukti transfer.' };
+                if (!this.transferBuktiPreview) return { title: 'Bukti transfer belum diupload', detail: 'Upload foto bukti transfer untuk arsip.' };
             }
             return null;
         },
