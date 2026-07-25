@@ -592,33 +592,53 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                 <div class="space-y-2">
                     <template x-for="(it, idx) in form.items" :key="idx">
-                        <div class="grid grid-cols-12 gap-2 items-end bg-vibe-surface-dim rounded-lg p-2.5">
-                            <div class="col-span-12 sm:col-span-4">
-                                <select x-model="it.bahan_id" @change="pickBahan(idx)" class="w-full px-2.5 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-on-surface text-xs transition-colors">
-                                    <option value="">— Pilih bahan baku —</option>
+                        <div class="flex flex-col sm:flex-row sm:items-end gap-2 bg-white border border-vibe-outline-variant/50 rounded-lg p-2.5 transition-all">
+                            
+                            <!-- Bahan selector -->
+                            <div class="w-full sm:flex-1">
+                                <label class="block sm:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-1">Bahan Baku</label>
+                                <select x-model="it.bahan_id" @change="pickBahan(idx)" class="w-full px-3 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-primary text-sm transition-colors">
+                                    <option value="">— Pilih bahan —</option>
                                     <template x-for="b in bahanList" :key="b.id">
                                         <option :value="b.id" x-text="b.nama"></option>
                                     </template>
-                                    <option value="__custom">⇥ Ketik bahan baru...</option>
+                                    <option value="__custom">⇥ Ketik baru...</option>
                                 </select>
-                                <input x-show="it.bahan_id === '__custom'" type="text" x-model="it.nama_bahan" placeholder="Nama bahan" class="w-full mt-1.5 px-2.5 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-on-surface text-xs transition-colors">
+                                <input x-show="it.bahan_id === '__custom'" type="text" x-model="it.nama_bahan" placeholder="Nama bahan baru" class="w-full mt-1.5 px-3 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-primary text-sm transition-colors">
                             </div>
-                            <div class="col-span-3 sm:col-span-2">
-                                <input type="number" step="0.01" min="0" x-model="it.qty" @input="recalc(idx)" placeholder="Qty" class="w-full px-2.5 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-on-surface text-xs transition-colors">
-                            </div>
-                            <div class="col-span-3 sm:col-span-2">
-                                <input type="text" x-model="it.satuan_view" @input="syncSatuan(idx)" placeholder="Satuan" class="w-full px-2.5 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-on-surface text-xs transition-colors">
-                            </div>
-                            <div class="col-span-3 sm:col-span-2">
-                                <div class="relative">
-                                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-vibe-on-surface-variant">Rp</span>
-                                    <input type="number" step="1" min="0" x-model="it.harga_satuan" @input="recalc(idx)" placeholder="0" class="w-full pl-6 pr-2 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-on-surface text-xs transition-colors">
+
+                            <!-- Qty & Satuan -->
+                            <div class="flex gap-1.5 w-full sm:w-[28%]">
+                                <div class="flex-1">
+                                    <label class="block sm:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-1">Jumlah</label>
+                                    <input type="number" step="0.01" min="0" x-model="it.qty" @input="recalc(idx)" placeholder="Qty" class="w-full px-3 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-primary text-sm transition-colors">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="block sm:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-1">Satuan</label>
+                                    <input type="text" x-model="it.satuan_view" @input="syncSatuan(idx)" placeholder="Satuan" class="w-full px-3 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-primary text-sm transition-colors">
                                 </div>
                             </div>
-                            <div class="col-span-2 sm:col-span-1 flex items-center justify-between">
-                                <span class="text-xs font-bold text-vibe-on-surface" x-text="fmt(it.subtotal)"></span>
-                                <button type="button" @click="removeItem(idx)" class="p-1 text-vibe-on-surface-variant hover:text-vibe-error transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+
+                            <!-- Harga & Subtotal -->
+                            <div class="flex gap-1.5 w-full sm:w-[28%] items-end">
+                                <div class="flex-1">
+                                    <label class="block sm:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-1">Harga</label>
+                                    <div class="relative">
+                                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-vibe-on-surface-variant">Rp</span>
+                                        <input type="number" step="1" min="0" x-model="it.harga_satuan" @input="recalc(idx)" placeholder="0" class="w-full pl-7 pr-2 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-primary text-sm transition-colors">
+                                    </div>
+                                </div>
+                                <div class="shrink-0 pb-1 ml-1 min-w-[70px]">
+                                    <span class="block sm:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-0.5">Subtotal</span>
+                                    <span class="text-sm font-bold text-vibe-on-surface block text-right" x-text="fmt(it.subtotal)"></span>
+                                </div>
+                            </div>
+
+                            <!-- Delete button -->
+                            <div class="shrink-0 flex items-center justify-end w-full sm:w-auto pt-3 sm:pt-0 mt-3 sm:mt-0 border-t border-vibe-outline-variant/30 sm:border-0">
+                                <button type="button" @click="removeItem(idx)" class="btn-press flex items-center gap-1.5 text-vibe-on-surface-variant hover:text-vibe-error transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    <span class="sm:hidden text-xs font-medium">Hapus</span>
                                 </button>
                             </div>
                         </div>
@@ -846,38 +866,47 @@ document.addEventListener('alpine:init', () => {
         onBukti(e) { this.buktiFile = e.target.files[0] || null; },
 
         // ---- Submit ----
-        async submitForm() {
-            this.saving = true;
-            try {
-                const fd = new FormData();
-                fd.append('csrf_token', '<?= generateCsrfToken() ?>');
-                fd.append('action', 'save');
-                fd.append('id', this.form.id || '');
-                fd.append('tanggal', this.form.tanggal);
-                fd.append('supplier', this.form.supplier);
-                fd.append('kategori', this.form.kategori);
-                fd.append('metode_bayar', this.form.metode_bayar);
-                fd.append('keterangan', this.form.keterangan);
-                fd.append('stok_updated', this.form.stok_updated ? '1' : '0');
-                const clean = this.form.items.map(it => ({
-                    bahan_id: it.bahan_id && it.bahan_id !== '__custom' ? it.bahan_id : null,
-                    nama_bahan: it.nama_bahan, qty: it.qty, satuan: it.satuan,
-                    harga_satuan: it.harga_satuan
-                }));
-                fd.append('items', JSON.stringify(clean));
-                if (this.buktiFile) fd.append('bukti', this.buktiFile);
-
-                const res = await fetch('proses_pengeluaran.php', { method: 'POST', body: fd });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.message || 'Gagal menyimpan.');
-                Swal.fire({ icon: 'success', title: 'Tersimpan', text: data.message, timer: 1500, showConfirmButton: false });
-                setTimeout(() => window.location.reload(), 700);
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: err.message });
-            } finally {
-                this.saving = false;
-            }
-        },
+async submitForm() {
+    // filter hanya item yang valid
+    const validItems = this.form.items.filter(i =>
+        i.nama_bahan && parseFloat(i.qty) > 0 && parseFloat(i.harga_satuan) > 0
+    );
+    if (validItems.length === 0) {
+        Swal.fire({icon:'warning', title:'Isi setidaknya satu item dengan data lengkap'});
+        return;
+    }
+    this.saving = true;
+    try {
+        const fd = new FormData();
+        fd.append('csrf_token', '<?= generateCsrfToken() ?>');
+        fd.append('action', 'save');
+        fd.append('id', this.form.id || '');
+        fd.append('tanggal', this.form.tanggal);
+        fd.append('supplier', this.form.supplier);
+        fd.append('kategori', this.form.kategori);
+        fd.append('metode_bayar', this.form.metode_bayar);
+        fd.append('keterangan', this.form.keterangan);
+        fd.append('stok_updated', this.form.stok_updated ? '1' : '0');
+        const clean = this.form.items.map(it => ({
+            bahan_id: it.bahan_id && it.bahan_id !== '__custom' ? it.bahan_id : null,
+            nama_bahan: it.nama_bahan,
+            qty: it.qty,
+            satuan: it.satuan,
+            harga_satuan: it.harga_satuan
+        }));
+        fd.append('items', JSON.stringify(clean));
+        if (this.buktiFile) fd.append('bukti', this.buktiFile);
+        const res = await fetch('proses_pengeluaran.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Gagal menyimpan.');
+        Swal.fire({ icon: 'success', title: 'Tersimpan', text: data.message, timer: 1500, showConfirmButton: false });
+        setTimeout(() => window.location.reload(), 700);
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Gagal', text: err.message });
+    } finally {
+        this.saving = false;
+    }
+},
 
         // ---- Detail ----
         showDetail(e) { this.detail = e; this.showDetailModal = true; },
