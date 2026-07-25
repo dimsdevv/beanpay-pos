@@ -263,14 +263,23 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                     </div>
                                     <?php endforeach; ?>
                                 </div>
-                                <?php if ($bukti): ?>
+                                <?php if ($bukti):
+                                    $filePath = __DIR__ . '/../../assets/uploads/bukti/' . $bukti;
+                                    $fileExists = file_exists($filePath);
+                                ?>
                                 <div class="pt-2 border-t border-vibe-outline/50">
                                     <div class="text-vibe-on-surface-variant font-bold uppercase tracking-wider text-[10px] mb-2">Bukti Transfer</div>
-                                    <a href="<?= BASE_URL ?>/assets/uploads/bukti/<?= htmlspecialchars($bukti) ?>" target="_blank" class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-vibe-outline-variant rounded-lg hover:border-vibe-on-surface transition-colors text-xs font-medium text-vibe-on-surface"
-                                       onclick="var img=new Image();img.onerror=function(){this.onerror=null;alert('File bukti tidak ditemukan atau sudah dihapus.');return false;};img.src=this.href;">
+                                    <?php if ($fileExists): ?>
+                                    <a href="<?= BASE_URL ?>/assets/uploads/bukti/<?= htmlspecialchars($bukti) ?>" target="_blank" class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-vibe-outline-variant rounded-lg hover:border-vibe-on-surface transition-colors text-xs font-medium text-vibe-on-surface">
                                         <svg class="w-4 h-4 text-vibe-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                         Lihat Bukti Transfer
                                     </a>
+                                    <?php else: ?>
+                                    <span class="inline-flex items-center gap-2 px-3 py-2 bg-vibe-error-container text-vibe-error rounded-lg text-xs font-medium">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        File bukti sudah tidak tersedia
+                                    </span>
+                                    <?php endif; ?>
                                 </div>
                                 <?php endif; ?>
                             </div>
