@@ -38,18 +38,18 @@ try {
         throw new Exception('Bahan tidak ditemukan.');
     }
 
-    // Restock +5
-    $jumlah = 5;
+    // Restock dinamis
+    $jumlah = max(1, (int)($_POST['jumlah'] ?? 5));
     $pdo->prepare("UPDATE bahan_baku SET stok_sekarang = stok_sekarang + ? WHERE id = ?")
         ->execute([$jumlah, $bahan_id]);
 
     $pdo->commit();
 
-    logAuditAction('restock_cepat', 'bahan_baku', $bahan_id, "Bahan: {$bahan['nama_bahan']} (+5 {$bahan['satuan']})");
+    logAuditAction('restock_cepat', 'bahan_baku', $bahan_id, "Bahan: {$bahan['nama_bahan']} (+{$jumlah} {$bahan['satuan']})");
 
     echo json_encode([
         'success' => true,
-        'message' => "{$bahan['nama_bahan']} +5 {$bahan['satuan']}. Stok siap!",
+        'message' => "{$bahan['nama_bahan']} +{$jumlah} {$bahan['satuan']}. Stok siap!",
         'bahan_id' => $bahan_id,
         'jumlah' => $jumlah,
     ]);

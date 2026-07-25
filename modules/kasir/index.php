@@ -664,7 +664,26 @@ document.addEventListener('alpine:init', () => {
         lowStockDetails: <?= json_encode($lowStockDetails) ?>,
 
         init() {
-            window.restockBahan = (id, nama) => this.restockBahan(id, nama);
+            window.restockBahan = (id, nama) => this.restockBahan(id, nama, 5);
+            window.restockBahanDialog = (id, nama, butuh) => {
+                const min = Math.ceil(butuh || 1);
+                Swal.fire({
+                    title: 'Tambah Stok',
+                    html: `<div style="font-family:Inter,sans-serif;text-align:left">
+                        <p class="text-sm text-gray-600 mb-2" style="font-family:Inter,sans-serif">Stok <strong>${nama}</strong>:</p>
+                        <input id="qty-input" type="number" value="${min}" min="1" step="1" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-lg font-bold text-center" style="font-family:Inter,sans-serif">
+                    </div>`,
+                    confirmButtonText: 'Tambah',
+                    showCancelButton: true,
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#0F172A',
+                    cancelButtonColor: '#E2E8F0',
+                    customClass: { popup: 'rounded-xl' },
+                    preConfirm: () => parseInt(document.getElementById('qty-input').value) || 0,
+                }).then(r => {
+                    if (r.isConfirmed && r.value > 0) this.restockBahan(id, nama, r.value);
+                });
+            };
         },
 
         // ── Constants from DB ──
@@ -810,9 +829,9 @@ document.addEventListener('alpine:init', () => {
                                 <span class="text-sm font-bold" style="color:#dc2626">${b.stok}</span>
                                 <span class="text-[11px] text-gray-400 ml-1">/ ${b.butuh}</span>
                             </div>
-                            <button onclick="window.restockBahan(${b.id}, '${b.nama.replace(/'/g, "\\'")}')"
+                            <button onclick="window.restockBahanDialog(${b.id}, '${b.nama.replace(/'/g, "\\'")}', ${b.butuh})"
                                     class="px-2 py-0.5 bg-white border border-gray-200 hover:border-vibe-primary rounded text-[10px] font-bold text-vibe-primary transition-colors">
-                                +5
+                                Restock
                             </button>
                         </div>
                     </div>
@@ -835,7 +854,7 @@ document.addEventListener('alpine:init', () => {
                         <p class="text-sm text-gray-500 mb-4 font-medium">Menu berikut tidak bisa dipesan — stok bahan tidak mencukupi:</p>
                         ${items}
                     </div>
-                    <div class="mt-3 pt-3 border-t border-gray-100 text-[10px] text-gray-400">Klik +5 untuk restock cepat per bahan</div>
+                    <div class="mt-3 pt-3 border-t border-gray-100 text-[10px] text-gray-400">Klik Restock untuk tambah stok bahan</div>
                 `,
                 confirmButtonColor: '#0F172A',
                 confirmButtonText: 'Tutup',
@@ -844,23 +863,23 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ── Restock Cepat ──
-        async restockBahan(bahanId, bahanNama) {
+        async restockBahan(bahanId, bahanNama, qty) {
             try {
                 const fd = new FormData();
                 const token = document.querySelector('input[name="csrf_token"]');
-                if (token) fd.append('csrf_token', token.value);
+                if (token)                 fd.append('csrf_token', token.value);
                 fd.append('bahan_id', bahanId);
+                fd.append('jumlah', qty);
 
                 const res = await fetch('proses_restock_cepat.php', { method: 'POST', body: fd });
                 const data = await res.json();
 
-                if (data.success) {
-                    // Update stok di lowStockDetails
+                    if (data.success) {
                     for (const menuId in this.lowStockDetails) {
                         const arr = this.lowStockDetails[menuId];
                         for (let i = 0; i < arr.length; i++) {
                             if (arr[i].id === bahanId) {
-                                arr[i].stok += 5;
+                                arr[i].stok += data.jumlah || qty;
                                 break;
                             }
                         }
