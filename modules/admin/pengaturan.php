@@ -67,6 +67,29 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         </a>
 
     </div>
+
+    <div class="mt-8 border-t border-vibe-outline-variant pt-8">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+                <div class="font-bold text-vibe-on-surface text-sm">Zona Berbahaya</div>
+                <p class="text-xs text-vibe-on-surface-variant">Tindakan destruktif yang tidak dapat dibatalkan.</p>
+            </div>
+        </div>
+        <a href="pengaturan_reset.php"
+           class="group flex items-center gap-4 bg-white border border-red-200 rounded-xl p-5 hover:border-red-400 transition-all active:scale-[0.99]">
+            <div class="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="font-bold text-vibe-on-surface group-hover:text-red-600 transition-colors">Reset Data Transaksi</div>
+                <p class="text-sm text-vibe-on-surface-variant mt-0.5">Hapus semua pesanan, pembayaran, shift, audit trail, dan bukti transfer.</p>
+            </div>
+            <svg class="w-5 h-5 text-vibe-outline-variant group-hover:text-red-500 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+    </div>
 </div>
 
 <style>
