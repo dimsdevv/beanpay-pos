@@ -52,6 +52,11 @@ function navClass($current_page, $target) {
                 Riwayat Transaksi
             </a>
 
+            <a href="<?= BASE_URL ?>/modules/admin/keuangan.php" class="<?= navClass($current_page, 'keuangan.php') ?>">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 13h18M5 13V7a2 2 0 012-2h10a2 2 0 012 2v6m-6 4h2a2 2 0 002-2V9M3 13v4a2 2 0 002 2h14a2 2 0 002-2v-4"/></svg>
+                Administrasi Keuangan
+            </a>
+
             <a href="<?= BASE_URL ?>/modules/admin/laporan.php" class="<?= navClass($current_page, 'laporan.php') ?>">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                 Laporan
