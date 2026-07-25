@@ -260,24 +260,24 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 </div>
                 <div>
                     <h1 class="text-2xl font-display font-bold text-vibe-on-surface tracking-tight">Administrasi Keuangan</h1>
-                    <p class="text-sm text-vibe-on-surface-variant mt-0.5">Catat belanja bahan, pantau anggaran, dan hitung HPP.</p>
+                    <p class="text-sm text-vibe-on-surface-variant mt-1">Catat pengeluaran bahan baku, atur anggaran bulanan, dan pantau harga modal menu.</p>
                 </div>
             </div>
         </div>
-        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full lg:w-auto">
-            <label class="relative flex-1 sm:flex-none">
-                <select @change="gantiPeriode($event)" class="appearance-none bg-white border border-vibe-outline-variant/60 rounded-xl pl-4 pr-10 py-3 text-sm font-semibold text-vibe-on-surface focus:outline-none focus:border-vibe-primary transition-colors cursor-pointer w-full sm:w-auto hover:bg-vibe-surface-dim">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-nowrap items-center gap-3 w-full lg:w-auto mt-6 lg:mt-0">
+            <label class="relative col-span-1 sm:col-span-2 lg:col-span-1 w-full lg:w-auto">
+                <select @change="gantiPeriode($event)" class="appearance-none bg-white border border-vibe-outline-variant/60 rounded-xl pl-4 pr-10 py-3 text-sm font-semibold text-vibe-on-surface focus:outline-none focus:border-vibe-primary transition-colors cursor-pointer w-full hover:bg-vibe-surface-dim">
                     <?php foreach ($bulanOptions as $bo): ?>
                         <option value="<?= $bo['value'] ?>" <?= $bo['value'] === $periode ? 'selected' : '' ?>><?= $bo['label'] ?></option>
                     <?php endforeach; ?>
                 </select>
                 <svg class="w-4 h-4 text-vibe-outline-variant absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </label>
-            <button @click="openBudget()" class="btn-press flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-white border border-vibe-outline-variant/60 rounded-xl text-sm font-bold text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim hover:border-vibe-outline-variant transition-colors">
+            <button @click="openBudget()" class="btn-press w-full lg:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-white border border-vibe-outline-variant/60 rounded-xl text-sm font-bold text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim hover:border-vibe-outline-variant transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Anggaran
             </button>
-            <button @click="openAdd()" class="btn-press w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-vibe-primary text-white rounded-xl text-sm font-bold hover:bg-vibe-primary-container transition-colors shadow-sm shadow-vibe-primary/20">
+            <button @click="openAdd()" class="btn-press w-full lg:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-vibe-primary text-white rounded-xl text-sm font-bold hover:bg-vibe-primary-container transition-colors shadow-sm shadow-vibe-primary/20">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                 Catat Pengeluaran
             </button>
@@ -285,17 +285,17 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
     <!-- KPI strip -->
-    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory lg:grid lg:grid-cols-4 gap-3 pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pb-0 mt-2">
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-5 shrink-0 w-[260px] lg:w-auto snap-center flex flex-col justify-between">
+    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory lg:grid lg:grid-cols-4 gap-4 pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pb-0 mt-8">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
             <div>
-                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total Belanja</div>
+                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total Pengeluaran</div>
                 <div class="text-2xl font-black text-vibe-on-surface mt-1.5"><?= formatRupiah($totalBelanja) ?></div>
             </div>
             <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70"><?= count($expenses) ?> transaksi · <?= $periodeLabel ?></div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-5 shrink-0 w-[260px] lg:w-auto snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
             <div>
-                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Realisasi Anggaran</div>
+                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Pemakaian Anggaran</div>
                 <div class="text-2xl font-black mt-1.5 <?= $sisaBudget < 0 ? 'text-vibe-error' : 'text-vibe-on-surface' ?>">
                     <?= $budget > 0 ? $pctBudget . '%' : '—' ?>
                 </div>
@@ -304,16 +304,16 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 Sisa <?= formatRupiah($sisaBudget) ?>
             </div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-5 shrink-0 w-[260px] lg:w-auto snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
             <div>
-                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Rata-rata / Hari</div>
+                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Rata-rata Pengeluaran Harian</div>
                 <div class="text-2xl font-black text-vibe-on-surface mt-1.5"><?= formatRupiah($rataHari) ?></div>
             </div>
-            <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70">Acuan <?= $hariAcuan ?> hari operasional</div>
+            <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70">Dihitung berdasarkan <?= $hariAcuan ?> hari buka</div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-5 shrink-0 w-[260px] lg:w-auto snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
             <div>
-                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total HPP (Bulan)</div>
+                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total Modal Bahan (HPP)</div>
                 <div class="text-2xl font-black text-vibe-accent mt-1.5"><?= formatRupiah($cogsBulan) ?></div>
             </div>
             <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70">Biaya bahan mentah terpakai</div>
@@ -321,16 +321,16 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
     <!-- Budget Pulse (signature) + Posisi Laba -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         <!-- Budget Pulse -->
-        <div class="lg:col-span-2 bg-white border border-vibe-outline-variant rounded-xl p-5 animate-fade-up">
-            <div class="flex items-center justify-between mb-4">
+        <div class="lg:col-span-2 bg-white border border-vibe-outline-variant/60 rounded-2xl p-6 animate-fade-up">
+            <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h3 class="font-display font-bold text-vibe-on-surface">Detak Anggaran</h3>
-                    <p class="text-[11px] text-vibe-on-surface-variant">Realisasi belanja terhadap pagu <?= $periodeLabel ?></p>
+                    <h3 class="font-display text-lg font-bold text-vibe-on-surface">Pantauan Anggaran</h3>
+                    <p class="text-xs text-vibe-on-surface-variant mt-1">Perbandingan total pengeluaran dengan batas anggaran bulan ini</p>
                 </div>
                 <div class="text-right">
-                    <div class="text-xs text-vibe-on-surface-variant">Pagu</div>
+                    <div class="text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider">Batas Anggaran</div>
                     <div class="font-bold text-vibe-on-surface"><?= $budget > 0 ? formatRupiah($budget) : 'Belum diatur' ?></div>
                 </div>
             </div>
@@ -389,9 +389,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         </div>
 
         <!-- Posisi Laba -->
-        <div class="bg-white border border-vibe-outline-variant rounded-xl p-5 animate-fade-up" style="animation-delay:.1s">
-            <h3 class="font-display font-bold text-vibe-on-surface mb-1">Posisi Laba</h3>
-            <p class="text-[11px] text-vibe-on-surface-variant mb-4"><?= $periodeLabel ?></p>
+        <div class="bg-white border border-vibe-outline-variant/60 rounded-2xl p-6 animate-fade-up" style="animation-delay:.1s">
+            <h3 class="font-display text-lg font-bold text-vibe-on-surface mb-1">Keuntungan Sementara</h3>
+            <p class="text-xs text-vibe-on-surface-variant mb-6"><?= $periodeLabel ?></p>
             <div class="space-y-2.5">
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-vibe-on-surface-variant">Omzet</span>
@@ -410,26 +410,26 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     <span class="font-black text-lg <?= $labaKotor >= 0 ? 'text-vibe-on-surface' : 'text-vibe-error' ?>"><?= formatRupiah($labaKotor) ?></span>
                 </div>
             </div>
-            <p class="text-[11px] text-vibe-on-surface-variant mt-3 leading-relaxed">
+            <p class="text-[11px] text-vibe-on-surface-variant mt-4 leading-relaxed">
                 <?= $labaKotor >= 0
-                    ? 'Pendapatan sudah menutupi HPP dan belanja bahan periode ini.'
-                    : 'Belanja bahan masih lebih besar dari omzet — wajar di masa pembukaan.' ?>
+                    ? 'Pendapatan saat ini sudah berhasil menutupi modal bahan baku dan pengeluaran lainnya.'
+                    : 'Pengeluaran masih lebih besar daripada pemasukan (wajar jika sedang masa awal pembukaan).' ?>
             </p>
         </div>
     </div>
 
     <!-- Transaksi -->
-    <div class="bg-white border border-vibe-outline-variant rounded-xl overflow-hidden animate-fade-up">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 border-b border-vibe-outline-variant">
+    <div class="bg-white border border-vibe-outline-variant/60 rounded-2xl overflow-hidden animate-fade-up mt-8 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-vibe-outline-variant/50">
             <div>
-                <h3 class="font-display font-bold text-vibe-on-surface">Riwayat Pengeluaran</h3>
-                <p class="text-[11px] text-vibe-on-surface-variant"><?= $periodeLabel ?></p>
+                <h3 class="font-display text-lg font-bold text-vibe-on-surface">Riwayat Pengeluaran</h3>
+                <p class="text-xs text-vibe-on-surface-variant mt-1">Daftar semua transaksi pada <?= $periodeLabel ?></p>
             </div>
-            <div class="relative w-full sm:w-64">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-vibe-outline-variant">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <div class="relative w-full sm:w-72">
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-vibe-outline-variant">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </span>
-                <input type="text" x-model="search" placeholder="Cari supplier / catatan..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors">
+                <input type="text" x-model="search" placeholder="Cari nama supplier atau catatan..." class="w-full pl-10 pr-4 py-3 bg-vibe-surface-dim border border-transparent rounded-xl focus:outline-none focus:border-vibe-primary focus:bg-white text-sm transition-colors">
             </div>
         </div>
 
@@ -492,10 +492,10 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
     <!-- COGS per Menu -->
-    <div class="bg-white border border-vibe-outline-variant rounded-xl overflow-hidden animate-fade-up">
-        <div class="p-5 border-b border-vibe-outline-variant">
-            <h3 class="font-display font-bold text-vibe-on-surface">HPP &amp; Margin per Menu</h3>
-            <p class="text-[11px] text-vibe-on-surface-variant">Biaya bahan (resep × harga beli) vs harga jual</p>
+    <div class="bg-white border border-vibe-outline-variant/60 rounded-2xl overflow-hidden animate-fade-up mt-8 shadow-sm">
+        <div class="p-6 border-b border-vibe-outline-variant/50">
+            <h3 class="font-display text-lg font-bold text-vibe-on-surface">Keuntungan per Menu</h3>
+            <p class="text-xs text-vibe-on-surface-variant mt-1">Perbandingan antara harga modal bahan dengan harga jual menu</p>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full">
@@ -541,7 +541,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         <div class="flex items-center justify-between px-6 py-5 border-b border-vibe-outline-variant/50 shrink-0">
             <div>
                 <h3 class="text-lg font-display font-bold text-vibe-on-surface" x-text="form.id ? 'Ubah Pengeluaran' : 'Catat Pengeluaran'"></h3>
-                <p class="text-xs text-vibe-on-surface-variant">Isi belanja bahan — harga otomatis dari riwayat bila ada.</p>
+                <p class="text-xs text-vibe-on-surface-variant">Masukkan detail pengeluaran. Harga akan terisi otomatis berdasarkan riwayat belanja Anda.</p>
             </div>
             <button @click="showForm=false" class="p-2 text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim rounded-lg transition-colors btn-press">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -595,11 +595,11 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <div class="grid grid-cols-12 gap-2 items-end bg-vibe-surface-dim rounded-lg p-2.5">
                             <div class="col-span-12 sm:col-span-4">
                                 <select x-model="it.bahan_id" @change="pickBahan(idx)" class="w-full px-2.5 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-on-surface text-xs transition-colors">
-                                    <option value="">— Bahan dari stok —</option>
+                                    <option value="">— Pilih bahan baku —</option>
                                     <template x-for="b in bahanList" :key="b.id">
                                         <option :value="b.id" x-text="b.nama"></option>
                                     </template>
-                                    <option value="__custom">⇥ Tulis manual…</option>
+                                    <option value="__custom">⇥ Ketik bahan baru...</option>
                                 </select>
                                 <input x-show="it.bahan_id === '__custom'" type="text" x-model="it.nama_bahan" placeholder="Nama bahan" class="w-full mt-1.5 px-2.5 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-on-surface text-xs transition-colors">
                             </div>
@@ -624,7 +624,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         </div>
                     </template>
                     <div x-show="form.items.length === 0" class="text-center py-4 text-xs text-vibe-on-surface-variant bg-vibe-surface-dim rounded-lg">
-                        Belum ada item. Tekan “Tambah item”.
+                        Belum ada item belanja. Klik "Tambah item" untuk mulai mencatat.
                     </div>
                 </div>
 
@@ -637,22 +637,22 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <!-- Bukti & opsi -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Bukti (foto, opsional)</label>
+                    <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Upload Bukti Nota/Struk (Opsional)</label>
                     <input type="file" accept="image/*" @change="onBukti($event)" class="w-full text-xs text-vibe-on-surface-variant file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-vibe-surface-container file:text-vibe-on-surface file:font-semibold file:cursor-pointer hover:file:bg-vibe-outline-variant transition-colors">
                     <p class="text-[11px] text-vibe-on-surface-variant mt-1" x-show="form.buktiName" x-text="'Tersimpan: ' + form.buktiName"></p>
                 </div>
                 <div class="flex flex-col justify-end">
                     <label class="flex items-center gap-2.5 cursor-pointer select-none bg-vibe-surface-dim rounded-lg px-3 py-2.5">
                         <input type="checkbox" x-model="form.stok_updated" class="w-4 h-4 accent-vibe-primary">
-                        <span class="text-sm text-vibe-on-surface font-medium">Perbarui stok &amp; harga beli bahan</span>
+                        <span class="text-sm text-vibe-on-surface font-medium">Perbarui stok &amp; harga modal</span>
                     </label>
-                    <p class="text-[11px] text-vibe-on-surface-variant mt-1.5">Centang agar stok bertambah & harga beli mengikuti nota ini.</p>
+                    <p class="text-[11px] text-vibe-on-surface-variant mt-1.5">Centang opsi ini agar jumlah stok dan harga modal bahan ikut diperbarui.</p>
                 </div>
             </div>
 
             <div>
-                <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Keterangan</label>
-                <textarea x-model="form.keterangan" rows="2" placeholder="Catatan tambahan…" class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors resize-none"></textarea>
+                <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Catatan Tambahan (Opsional)</label>
+                <textarea x-model="form.keterangan" rows="2" placeholder="Tuliskan catatan tambahan jika ada..." class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors resize-none"></textarea>
             </div>
         </div>
 
@@ -729,8 +729,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     <div @click.stop class="bg-white rounded-2xl w-full max-w-sm border border-vibe-outline-variant/50 p-7 shadow-2xl"
          x-show="showBudgetModal" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-4">
         <h3 class="text-lg font-display font-bold text-vibe-on-surface mb-1">Atur Anggaran Bulanan</h3>
-        <p class="text-xs text-vibe-on-surface-variant mb-5" x-text="'Pagu untuk ' + periodeLabel"></p>
-        <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Nominal Pagu</label>
+        <p class="text-xs text-vibe-on-surface-variant mb-5" x-text="'Batas pengeluaran untuk ' + periodeLabel"></p>
+        <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Batas Anggaran (Rp)</label>
         <div class="relative">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-vibe-on-surface-variant">Rp</span>
             <input type="number" step="1" min="0" x-model="budgetNominal" class="w-full pl-9 pr-4 py-3 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors">
