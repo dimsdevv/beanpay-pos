@@ -702,6 +702,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 </div>
 
+    </div> <?php /* close x-data="keuanganApp()" */ ?>
     <?php endif; ?>
 </div>
 
