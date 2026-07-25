@@ -475,62 +475,15 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         </div>
                     </div>
 
-                    <div x-show="paymentMethod === 'transfer'" x-transition.opacity.duration.150ms class="bg-white border border-vibe-outline-variant rounded-lg p-3 space-y-2.5">
-                        <!-- Bank Info -->
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                </div>
-                                <div>
-                                    <div class="text-[10px] text-vibe-on-surface-variant font-medium">BCA</div>
-                                    <div class="font-display font-bold text-vibe-on-surface tracking-tight tabular-nums text-sm leading-tight">5142777011</div>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <button type="button" @click="copyRekening()" class="px-2.5 py-1.5 bg-vibe-on-surface text-white rounded-md text-[10px] font-bold transition-colors active:scale-[0.98]" x-text="rekeningCopied ? 'Disalin' : 'Salin'"></button>
-                                <div class="text-[10px] text-vibe-on-surface-variant mt-0.5">a.n. Budi Mulyana</div>
-                            </div>
+                    <div x-show="paymentMethod === 'transfer'" x-transition.opacity.duration.150ms class="flex items-center gap-3 bg-vibe-surface-dim border border-vibe-outline-variant rounded-lg p-3">
+                        <div class="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                         </div>
-
-                        <div class="text-[11px] text-vibe-on-surface-variant px-0.5 -mt-1">Transfer <span class="font-bold" x-text="formatRupiah(grandTotal)"></span> ke rekening di atas.</div>
-
-                        <div class="space-y-2">
-                            <div>
-                                <label class="block text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest mb-1">Nama Pengirim</label>
-                                <input type="text" name="nama_pengirim" x-model="transferNama"
-                                       placeholder="Cth: Budi Mulyana"
-                                       class="w-full px-3 py-2 bg-white border border-vibe-outline-variant rounded-md text-sm font-medium text-vibe-on-surface focus:outline-none focus:border-vibe-on-surface transition-colors placeholder-vibe-outline-variant">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest mb-1">Nomor Referensi / Berita</label>
-                                <input type="text" name="referensi" x-model="transferRef"
-                                       placeholder="Cth: 271890 / Pembayaran"
-                                       class="w-full px-3 py-2 bg-white border border-vibe-outline-variant rounded-md text-sm font-medium text-vibe-on-surface focus:outline-none focus:border-vibe-on-surface transition-colors placeholder-vibe-outline-variant">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest mb-1">Upload Bukti Transfer</label>
-                                <div class="relative flex items-center gap-2 p-2 bg-vibe-surface-dim border border-dashed border-vibe-outline-variant rounded-md cursor-pointer hover:border-vibe-on-surface transition-colors"
-                                     @click="$refs.buktiInput.click()">
-                                    <template x-if="!transferBuktiPreview">
-                                        <div class="flex items-center gap-2 w-full">
-                                            <svg class="w-5 h-5 text-vibe-outline-variant shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                            <span class="text-[11px] text-vibe-on-surface-variant font-medium">Ketuk untuk unggah bukti</span>
-                                        </div>
-                                    </template>
-                                    <template x-if="transferBuktiPreview">
-                                        <div class="flex items-center gap-2 w-full">
-                                            <img :src="transferBuktiPreview" class="w-10 h-10 rounded object-cover border border-vibe-outline-variant shrink-0">
-                                            <span class="text-[11px] text-vibe-on-surface-variant truncate flex-1" x-text="transferBuktiNama || 'Bukti terunggah'"></span>
-                                            <button type="button" @click.stop="resetBukti()" class="p-1 text-vibe-on-surface-variant hover:text-vibe-error rounded transition-colors">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                            </button>
-                                        </div>
-                                    </template>
-                                </div>
-                                <input type="file" name="bukti_transfer" x-ref="buktiInput" class="hidden" accept="image/*" @change="previewBukti($event)">
-                            </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-[11px] text-vibe-on-surface-variant">Transfer <span class="font-bold" x-text="formatRupiah(grandTotal)"></span></div>
+                            <div class="text-[10px] text-vibe-on-surface-variant truncate">BCA 5142777011 a.n. Budi Mulyana</div>
                         </div>
+                        <button type="button" @click="openTransferModal()" class="px-3 py-2 bg-vibe-on-surface text-white rounded-md text-xs font-bold transition-colors active:scale-[0.98] shrink-0">Lanjut</button>
                     </div>
 
                     <div x-show="paymentIssue" x-transition.opacity.duration.150ms class="flex items-start gap-2 rounded-lg border border-vibe-outline-variant bg-vibe-surface-dim px-3 py-2">
@@ -551,6 +504,112 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         <span>BAYAR <span x-text="formatRupiah(grandTotal)"></span></span>
                     </button>
+                </div>
+            </div>
+
+            <!-- ═══ TRANSFER MODAL (fullscreen, inside form) ═══ -->
+            <div x-show="showTransferModal" x-cloak
+                 x-transition:enter="transition duration-200 ease-out"
+                 x-transition:enter-start="opacity-0 scale-[0.97]"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition duration-150 ease-in"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-[0.97]"
+                 @keydown.escape.window="closeTransferModal()"
+                 class="fixed inset-0 z-50 flex flex-col bg-white">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-vibe-outline shrink-0">
+                    <h2 class="text-lg font-display font-bold text-vibe-on-surface tracking-tight">Konfirmasi Transfer</h2>
+                    <button type="button" @click="closeTransferModal()" class="p-2 -mr-2 text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-5 py-6 space-y-6">
+                    <!-- Bank Info Card -->
+                    <div class="bg-vibe-primary text-white rounded-xl p-5 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                </div>
+                                <div>
+                                    <div class="text-white/60 text-[11px] font-medium">Bank Tujuan</div>
+                                    <div class="font-bold text-sm tracking-tight">BCA</div>
+                                </div>
+                            </div>
+                            <button type="button" @click="copyRekening()" class="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-[11px] font-bold transition-colors active:scale-[0.97]" x-text="rekeningCopied ? 'Disalin' : 'Salin'"></button>
+                        </div>
+                        <div class="border-t border-white/15 pt-3">
+                            <div class="text-white/60 text-[11px] font-medium">Nomor Rekening</div>
+                            <div class="font-display font-bold text-xl md:text-2xl tracking-tight tabular-nums">5142777011</div>
+                        </div>
+                        <div>
+                            <div class="text-white/60 text-[11px] font-medium">Atas Nama</div>
+                            <div class="font-bold text-sm">Budi Mulyana</div>
+                        </div>
+                        <div class="bg-white/10 rounded-lg px-3.5 py-2.5 -mx-0.5">
+                            <div class="text-white/80 text-xs font-medium">Total yang harus ditransfer</div>
+                            <div class="font-display font-black text-xl md:text-2xl tracking-tight mt-0.5" x-text="formatRupiah(grandTotal)"></div>
+                        </div>
+                    </div>
+
+                    <!-- Form Fields -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-vibe-on-surface-variant uppercase tracking-widest mb-1.5">Nama Pengirim</label>
+                            <input type="text" name="nama_pengirim" x-model="transferNama" required
+                                   placeholder="Cth: Budi Mulyana"
+                                   class="w-full px-4 py-3 bg-white border border-vibe-outline-variant rounded-lg text-sm font-semibold text-vibe-on-surface focus:outline-none focus:border-vibe-on-surface transition-colors placeholder-vibe-outline-variant">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-vibe-on-surface-variant uppercase tracking-widest mb-1.5">Nomor Referensi / Berita</label>
+                            <input type="text" name="referensi" x-model="transferRef" required
+                                   placeholder="Cth: 271890 / Pembayaran"
+                                   class="w-full px-4 py-3 bg-white border border-vibe-outline-variant rounded-lg text-sm font-semibold text-vibe-on-surface focus:outline-none focus:border-vibe-on-surface transition-colors placeholder-vibe-outline-variant">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-vibe-on-surface-variant uppercase tracking-widest mb-1.5">Upload Bukti Transfer</label>
+                            <div @click="$refs.buktiInput.click()"
+                                 class="relative flex items-center justify-center gap-3 p-6 bg-vibe-surface-dim border-2 border-dashed border-vibe-outline-variant rounded-xl cursor-pointer hover:border-vibe-on-surface hover:bg-white transition-colors"
+                                 :class="transferBuktiPreview ? 'border-vibe-secondary bg-white' : ''">
+                                <template x-if="!transferBuktiPreview">
+                                    <div class="flex flex-col items-center gap-2 text-center">
+                                        <div class="w-12 h-12 rounded-xl bg-white border border-vibe-outline-variant flex items-center justify-center">
+                                            <svg class="w-6 h-6 text-vibe-outline-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-bold text-vibe-on-surface">Ketuk untuk unggah</div>
+                                            <div class="text-[11px] text-vibe-on-surface-variant">JPG, PNG, atau WebP · Maks 2MB</div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="transferBuktiPreview">
+                                    <div class="flex items-center gap-4 w-full">
+                                        <img :src="transferBuktiPreview" class="w-16 h-16 rounded-lg object-cover border border-vibe-outline-variant shrink-0">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-bold text-vibe-on-surface truncate" x-text="transferBuktiNama || 'Bukti terunggah'"></div>
+                                            <div class="text-[11px] text-vibe-secondary font-medium">Terunggah</div>
+                                        </div>
+                                        <button type="button" @click.stop="resetBukti()" class="p-2 text-vibe-on-surface-variant hover:text-vibe-error hover:bg-red-50 rounded-lg transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                            <input type="file" name="bukti_transfer" x-ref="buktiInput" class="hidden" accept="image/*" @change="previewBukti($event)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="shrink-0 border-t border-vibe-outline-variant bg-white px-5 py-4 space-y-2">
+                    <div x-show="paymentIssue" x-transition.opacity.duration.150ms class="flex items-center gap-2 px-3 py-2 bg-vibe-error-container text-vibe-error rounded-lg text-xs font-bold">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span x-text="paymentIssue ? paymentIssue.title + ' — ' + paymentIssue.detail : ''"></span>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="button" @click="closeTransferModal()" class="flex-1 py-3 rounded-xl border border-vibe-outline-variant text-vibe-on-surface-variant font-bold text-sm hover:bg-vibe-surface-dim transition-colors active:scale-[0.98]">Batal</button>
+                        <button type="submit" class="flex-1 py-3 rounded-xl bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors active:scale-[0.98] shadow-sm">Konfirmasi & Bayar</button>
+                    </div>
                 </div>
             </div>
         </form>
@@ -579,6 +638,11 @@ document.addEventListener('alpine:init', () => {
         paymentMethod: 'cash',
         amountReceived: 0,
         rekeningCopied: false,
+        showTransferModal: false,
+        transferNama: '',
+        transferRef: '',
+        transferBuktiPreview: null,
+        transferBuktiNama: '',
         
         // ── Promo ──
         promoCode: '',
@@ -827,7 +891,21 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ── Payment ──
-        setPaymentMethod(m) { this.paymentMethod = m; this.rekeningCopied = false; this.syncAmount(); },
+        setPaymentMethod(m) {
+            this.paymentMethod = m;
+            this.rekeningCopied = false;
+            if (m === 'transfer') { this.openTransferModal(); }
+            this.syncAmount();
+        },
+        openTransferModal() { this.showTransferModal = true; },
+        closeTransferModal() {
+            this.showTransferModal = false;
+            this.paymentMethod = 'cash';
+            this.rekeningCopied = false;
+            this.transferNama = '';
+            this.transferRef = '';
+            this.resetBukti();
+        },
         async copyRekening() {
             try {
                 await navigator.clipboard.writeText('5142777011');
