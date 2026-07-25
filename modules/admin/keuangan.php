@@ -221,33 +221,63 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     <?php else: ?>
         <div x-data="keuanganApp()">
 
+<style>
+/* Micro-interactions & Emil Kowalski Animations */
+.btn-press {
+    transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease-out, border-color 160ms ease-out;
+}
+.btn-press:active {
+    transform: scale(0.97);
+}
+
+/* Modal Spring Entrance */
+.modal-enter {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 200ms ease-out, transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.modal-enter-active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Horizontal Snap Scrollbar hiding */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+</style>
+
     <!-- Header -->
     <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div>
-            <div class="flex items-center gap-2.5">
-                <div class="w-10 h-10 rounded-xl bg-vibe-primary/10 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-vibe-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h18M5 13V7a2 2 0 012-2h10a2 2 0 012 2v6m-6 4h2a2 2 0 002-2V9M3 13v4a2 2 0 002 2h14a2 2 0 002-2v-4"/></svg>
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-vibe-primary/10 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 text-vibe-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h18M5 13V7a2 2 0 012-2h10a2 2 0 012 2v6m-6 4h2a2 2 0 002-2V9M3 13v4a2 2 0 002 2h14a2 2 0 002-2v-4"/></svg>
                 </div>
                 <div>
                     <h1 class="text-2xl font-display font-bold text-vibe-on-surface tracking-tight">Administrasi Keuangan</h1>
-                    <p class="text-sm text-vibe-on-surface-variant mt-0.5">Catat belanja bahan, pantau anggaran, dan hitung HPP menu.</p>
+                    <p class="text-sm text-vibe-on-surface-variant mt-0.5">Catat belanja bahan, pantau anggaran, dan hitung HPP.</p>
                 </div>
             </div>
         </div>
-        <div class="flex items-center gap-2.5">
-            <label class="relative">
-                <select @change="gantiPeriode($event)" class="appearance-none bg-white border border-vibe-outline-variant rounded-lg pl-3.5 pr-9 py-2.5 text-sm font-semibold text-vibe-on-surface focus:outline-none focus:border-vibe-on-surface transition-colors cursor-pointer">
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full lg:w-auto">
+            <label class="relative flex-1 sm:flex-none">
+                <select @change="gantiPeriode($event)" class="appearance-none bg-white border border-vibe-outline-variant/60 rounded-xl pl-4 pr-10 py-3 text-sm font-semibold text-vibe-on-surface focus:outline-none focus:border-vibe-primary transition-colors cursor-pointer w-full sm:w-auto hover:bg-vibe-surface-dim">
                     <?php foreach ($bulanOptions as $bo): ?>
                         <option value="<?= $bo['value'] ?>" <?= $bo['value'] === $periode ? 'selected' : '' ?>><?= $bo['label'] ?></option>
                     <?php endforeach; ?>
                 </select>
-                <svg class="w-4 h-4 text-vibe-outline-variant absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                <svg class="w-4 h-4 text-vibe-outline-variant absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </label>
-            <button @click="openBudget()" class="flex items-center gap-2 px-4 py-2.5 bg-white border border-vibe-outline-variant rounded-lg text-sm font-bold text-vibe-on-surface-variant hover:bg-vibe-surface-dim transition-colors active:scale-[0.99]">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <button @click="openBudget()" class="btn-press flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-white border border-vibe-outline-variant/60 rounded-xl text-sm font-bold text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim hover:border-vibe-outline-variant transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Anggaran
             </button>
-            <button @click="openAdd()" class="flex items-center gap-2 px-4 py-2.5 bg-vibe-primary text-white rounded-lg text-sm font-bold hover:bg-vibe-primary-container transition-colors active:scale-[0.99]">
+            <button @click="openAdd()" class="btn-press w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-vibe-primary text-white rounded-xl text-sm font-bold hover:bg-vibe-primary-container transition-colors shadow-sm shadow-vibe-primary/20">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                 Catat Pengeluaran
             </button>
@@ -255,30 +285,38 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
     <!-- KPI strip -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="bg-white border border-vibe-outline-variant rounded-xl px-4 py-3.5 animate-fade-up">
-            <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-wider">Total Belanja</div>
-            <div class="text-xl font-black text-vibe-on-surface mt-1"><?= formatRupiah($totalBelanja) ?></div>
-            <div class="text-[11px] text-vibe-on-surface-variant mt-0.5"><?= count($expenses) ?> transaksi · <?= $periodeLabel ?></div>
-        </div>
-        <div class="bg-white border border-vibe-outline-variant rounded-xl px-4 py-3.5 animate-fade-up" style="animation-delay:.05s">
-            <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-wider">Realisasi Anggaran</div>
-            <div class="text-xl font-black mt-1 <?= $sisaBudget < 0 ? 'text-vibe-error' : 'text-vibe-on-surface' ?>">
-                <?= $budget > 0 ? $pctBudget . '%' : '—' ?>
+    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory lg:grid lg:grid-cols-4 gap-3 pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pb-0 mt-2">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-5 shrink-0 w-[260px] lg:w-auto snap-center flex flex-col justify-between">
+            <div>
+                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total Belanja</div>
+                <div class="text-2xl font-black text-vibe-on-surface mt-1.5"><?= formatRupiah($totalBelanja) ?></div>
             </div>
-            <div class="text-[11px] mt-0.5 <?= $sisaBudget < 0 ? 'text-vibe-error font-semibold' : 'text-vibe-on-surface-variant' ?>">
+            <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70"><?= count($expenses) ?> transaksi · <?= $periodeLabel ?></div>
+        </div>
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-5 shrink-0 w-[260px] lg:w-auto snap-center flex flex-col justify-between">
+            <div>
+                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Realisasi Anggaran</div>
+                <div class="text-2xl font-black mt-1.5 <?= $sisaBudget < 0 ? 'text-vibe-error' : 'text-vibe-on-surface' ?>">
+                    <?= $budget > 0 ? $pctBudget . '%' : '—' ?>
+                </div>
+            </div>
+            <div class="text-xs font-semibold mt-4 <?= $sisaBudget < 0 ? 'text-vibe-error bg-vibe-error/10 px-2 py-1 rounded-md inline-block w-fit' : 'text-vibe-on-surface-variant opacity-70' ?>">
                 Sisa <?= formatRupiah($sisaBudget) ?>
             </div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant rounded-xl px-4 py-3.5 animate-fade-up" style="animation-delay:.1s">
-            <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-wider">Rata-rata / Hari</div>
-            <div class="text-xl font-black text-vibe-on-surface mt-1"><?= formatRupiah($rataHari) ?></div>
-            <div class="text-[11px] text-vibe-on-surface-variant mt-0.5">Acuan <?= $hariAcuan ?> hari</div>
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-5 shrink-0 w-[260px] lg:w-auto snap-center flex flex-col justify-between">
+            <div>
+                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Rata-rata / Hari</div>
+                <div class="text-2xl font-black text-vibe-on-surface mt-1.5"><?= formatRupiah($rataHari) ?></div>
+            </div>
+            <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70">Acuan <?= $hariAcuan ?> hari operasional</div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant rounded-xl px-4 py-3.5 animate-fade-up" style="animation-delay:.15s">
-            <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-wider">Total HPP (Bulan)</div>
-            <div class="text-xl font-black text-vibe-accent mt-1"><?= formatRupiah($cogsBulan) ?></div>
-            <div class="text-[11px] text-vibe-on-surface-variant mt-0.5">Biaya bahan terpakai</div>
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-5 shrink-0 w-[260px] lg:w-auto snap-center flex flex-col justify-between">
+            <div>
+                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total HPP (Bulan)</div>
+                <div class="text-2xl font-black text-vibe-accent mt-1.5"><?= formatRupiah($cogsBulan) ?></div>
+            </div>
+            <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70">Biaya bahan mentah terpakai</div>
         </div>
     </div>
 
@@ -399,23 +437,23 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <table class="w-full">
                 <thead>
                     <tr class="text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-widest border-b border-vibe-outline-variant bg-vibe-surface-dim">
-                        <th class="px-5 py-3.5 text-left">Tanggal</th>
-                        <th class="px-5 py-3.5 text-left">Supplier</th>
-                        <th class="px-5 py-3.5 text-left">Kategori</th>
-                        <th class="px-5 py-3.5 text-center">Metode</th>
-                        <th class="px-5 py-3.5 text-right">Total</th>
-                        <th class="px-5 py-3.5 text-center">Aksi</th>
+                        <th class="px-5 py-4 text-left">Tanggal</th>
+                        <th class="px-5 py-4 text-left">Supplier</th>
+                        <th class="px-5 py-4 text-left">Kategori</th>
+                        <th class="px-5 py-4 text-center">Metode</th>
+                        <th class="px-5 py-4 text-right">Total</th>
+                        <th class="px-5 py-4 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-vibe-outline/50">
                     <template x-for="e in filteredExpenses()" :key="e.id">
-                        <tr class="hover:bg-vibe-surface-dim transition-colors">
-                            <td class="px-5 py-3.5 text-sm text-vibe-on-surface-variant" x-text="e.tanggal"></td>
-                            <td class="px-5 py-3.5">
-                                <div class="font-semibold text-sm text-vibe-on-surface" x-text="e.supplier || '—'"></div>
-                                <div class="text-[11px] text-vibe-on-surface-variant" x-text="(e.items ? e.items.length : 0) + ' item · ' + (e.input_nama || 'admin')"></div>
+                        <tr class="hover:bg-vibe-surface-dim transition-colors group">
+                            <td class="px-5 py-4 text-sm text-vibe-on-surface-variant group-hover:text-vibe-on-surface transition-colors" x-text="e.tanggal"></td>
+                            <td class="px-5 py-4">
+                                <div class="font-bold text-sm text-vibe-on-surface" x-text="e.supplier || '—'"></div>
+                                <div class="text-[11px] font-medium text-vibe-on-surface-variant opacity-80" x-text="(e.items ? e.items.length : 0) + ' item · ' + (e.input_nama || 'admin')"></div>
                             </td>
-                            <td class="px-5 py-3.5">
+                            <td class="px-5 py-4">
                                 <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold border"
                                     :class="{
                                         'bg-vibe-secondary/10 text-vibe-secondary border-vibe-secondary/20': e.kategori==='pembukaan',
@@ -424,21 +462,21 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                     }"
                                     x-text="e.kategori === 'pembukaan' ? 'Pembukaan' : (e.kategori === 'operasional' ? 'Operasional' : 'Lainnya')"></span>
                             </td>
-                            <td class="px-5 py-3.5 text-center">
-                                <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-vibe-on-surface-variant capitalize"
+                            <td class="px-5 py-4 text-center">
+                                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-vibe-on-surface-variant capitalize"
                                     :class="{'text-vibe-secondary': e.metode_bayar==='qris', 'text-vibe-accent': e.metode_bayar==='transfer'}"
                                     x-text="e.metode_bayar"></span>
                             </td>
-                            <td class="px-5 py-3.5 text-right font-bold text-vibe-on-surface" x-text="fmt(e.total)"></td>
-                            <td class="px-5 py-3.5">
-                                <div class="flex items-center justify-center gap-1.5">
-                                    <button @click="showDetail(e)" title="Detail" class="p-1.5 rounded-md text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-container transition-colors">
+                            <td class="px-5 py-4 text-right font-black text-vibe-on-surface" x-text="fmt(e.total)"></td>
+                            <td class="px-5 py-4">
+                                <div class="flex items-center justify-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                                    <button @click="showDetail(e)" title="Detail" class="p-2 rounded-lg text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-container transition-colors btn-press">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     </button>
-                                    <button @click="openEdit(e)" title="Ubah" class="p-1.5 rounded-md text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-container transition-colors">
+                                    <button @click="openEdit(e)" title="Ubah" class="p-2 rounded-lg text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-container transition-colors btn-press">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </button>
-                                    <button @click="confirmDelete(e)" title="Hapus" class="p-1.5 rounded-md text-vibe-on-surface-variant hover:text-vibe-error hover:bg-vibe-error-container transition-colors">
+                                    <button @click="confirmDelete(e)" title="Hapus" class="p-2 rounded-lg text-vibe-on-surface-variant hover:text-vibe-error hover:bg-vibe-error-container transition-colors btn-press">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                 </div>
@@ -463,21 +501,21 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <table class="w-full">
                 <thead>
                     <tr class="text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-widest border-b border-vibe-outline-variant bg-vibe-surface-dim">
-                        <th class="px-5 py-3.5 text-left">Menu</th>
-                        <th class="px-5 py-3.5 text-right">Harga Jual</th>
-                        <th class="px-5 py-3.5 text-right">HPP</th>
-                        <th class="px-5 py-3.5 text-right">Laba</th>
-                        <th class="px-5 py-3.5 text-left">Margin</th>
+                        <th class="px-5 py-4 text-left">Menu</th>
+                        <th class="px-5 py-4 text-right">Harga Jual</th>
+                        <th class="px-5 py-4 text-right">HPP</th>
+                        <th class="px-5 py-4 text-right">Laba</th>
+                        <th class="px-5 py-4 text-left">Margin</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-vibe-outline/50">
                     <?php foreach ($menuHpp as $m): ?>
-                    <tr class="hover:bg-vibe-surface-dim transition-colors">
-                        <td class="px-5 py-3.5 font-semibold text-sm text-vibe-on-surface"><?= htmlspecialchars($m['nama_menu']) ?></td>
-                        <td class="px-5 py-3.5 text-right text-sm text-vibe-on-surface"><?= formatRupiah($m['harga']) ?></td>
-                        <td class="px-5 py-3.5 text-right text-sm text-vibe-accent font-medium"><?= formatRupiah($m['hpp']) ?></td>
-                        <td class="px-5 py-3.5 text-right text-sm font-bold text-vibe-on-surface"><?= formatRupiah($m['laba']) ?></td>
-                        <td class="px-5 py-3.5">
+                    <tr class="hover:bg-vibe-surface-dim transition-colors group">
+                        <td class="px-5 py-4 font-bold text-sm text-vibe-on-surface"><?= htmlspecialchars($m['nama_menu']) ?></td>
+                        <td class="px-5 py-4 text-right text-sm font-semibold text-vibe-on-surface-variant group-hover:text-vibe-on-surface transition-colors"><?= formatRupiah($m['harga']) ?></td>
+                        <td class="px-5 py-4 text-right text-sm text-vibe-accent font-bold"><?= formatRupiah($m['hpp']) ?></td>
+                        <td class="px-5 py-4 text-right text-sm font-black text-vibe-on-surface"><?= formatRupiah($m['laba']) ?></td>
+                        <td class="px-5 py-4">
                             <div class="flex items-center gap-2.5">
                                 <div class="flex-1 h-2 rounded-full bg-vibe-surface-container overflow-hidden max-w-[140px]">
                                     <div class="h-full rounded-full <?= $m['margin'] >= 60 ? 'bg-vibe-secondary' : ($m['margin'] >= 30 ? 'bg-vibe-accent' : 'bg-vibe-error') ?>"
@@ -497,14 +535,15 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
 <!-- ============ MODAL: FORM PENGELUARAN ============ -->
-<div x-show="showForm" @keydown.escape.window="showForm=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" x-transition style="display:none">
-    <div @click.stop class="bg-white rounded-xl w-full max-w-2xl border border-vibe-outline-variant max-h-[90vh] flex flex-col">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-vibe-outline-variant shrink-0">
+<div x-show="showForm" @keydown.escape.window="showForm=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-vibe-surface-dim/80 backdrop-blur-sm" x-transition.opacity.duration.200ms style="display:none">
+    <div @click.stop class="bg-white rounded-2xl w-full max-w-2xl border border-vibe-outline-variant/50 max-h-[90vh] flex flex-col shadow-2xl"
+         x-show="showForm" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-4">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-vibe-outline-variant/50 shrink-0">
             <div>
                 <h3 class="text-lg font-display font-bold text-vibe-on-surface" x-text="form.id ? 'Ubah Pengeluaran' : 'Catat Pengeluaran'"></h3>
                 <p class="text-xs text-vibe-on-surface-variant">Isi belanja bahan — harga otomatis dari riwayat bila ada.</p>
             </div>
-            <button @click="showForm=false" class="p-1.5 text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim rounded-md transition-colors">
+            <button @click="showForm=false" class="p-2 text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim rounded-lg transition-colors btn-press">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
@@ -617,22 +656,23 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
         </div>
 
-        <div class="px-6 py-4 border-t border-vibe-outline-variant flex gap-3 shrink-0">
-            <button type="button" @click="showForm=false" class="flex-1 py-2.5 rounded-lg border border-vibe-outline-variant text-vibe-on-surface-variant font-bold text-sm hover:bg-vibe-surface-dim transition-colors">Batal</button>
-            <button type="button" @click="submitForm()" :disabled="saving" class="flex-1 py-2.5 rounded-lg bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors active:scale-[0.99] disabled:opacity-60" x-text="saving ? 'Menyimpan…' : (form.id ? 'Simpan Perubahan' : 'Catat Pengeluaran')"></button>
+        <div class="px-6 py-5 border-t border-vibe-outline-variant/50 flex gap-3 shrink-0">
+            <button type="button" @click="showForm=false" class="btn-press flex-1 py-3 rounded-xl border border-vibe-outline-variant/60 text-vibe-on-surface-variant font-bold text-sm hover:text-vibe-on-surface hover:bg-vibe-surface-dim transition-colors">Batal</button>
+            <button type="button" @click="submitForm()" :disabled="saving" class="btn-press flex-1 py-3 rounded-xl bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors disabled:opacity-60 shadow-sm shadow-vibe-primary/20" x-text="saving ? 'Menyimpan…' : (form.id ? 'Simpan Perubahan' : 'Catat Pengeluaran')"></button>
         </div>
     </div>
 </div>
 
 <!-- ============ MODAL: DETAIL ============ -->
-<div x-show="showDetailModal" @keydown.escape.window="showDetailModal=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" x-transition style="display:none">
-    <div @click.stop class="bg-white rounded-xl w-full max-w-lg border border-vibe-outline-variant max-h-[85vh] flex flex-col">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-vibe-outline-variant shrink-0">
+<div x-show="showDetailModal" @keydown.escape.window="showDetailModal=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-vibe-surface-dim/80 backdrop-blur-sm" x-transition.opacity.duration.200ms style="display:none">
+    <div @click.stop class="bg-white rounded-2xl w-full max-w-lg border border-vibe-outline-variant/50 max-h-[85vh] flex flex-col shadow-2xl"
+         x-show="showDetailModal" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-4">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-vibe-outline-variant/50 shrink-0">
             <div>
                 <h3 class="text-lg font-display font-bold text-vibe-on-surface" x-text="detail?.supplier || 'Detail Pengeluaran'"></h3>
                 <p class="text-xs text-vibe-on-surface-variant"><span x-text="detail?.tanggal"></span> · <span x-text="detail?.kategori === 'pembukaan' ? 'Pembukaan' : (detail?.kategori === 'operasional' ? 'Operasional' : 'Lainnya')"></span></p>
             </div>
-            <button @click="showDetailModal=false" class="p-1.5 text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim rounded-md transition-colors">
+            <button @click="showDetailModal=false" class="p-2 text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim rounded-lg transition-colors btn-press">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
@@ -677,16 +717,17 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 <img :src="'<?= BASE_URL ?>/assets/uploads/bukti/' + detail?.bukti" alt="Bukti" class="max-h-48 rounded-lg border border-vibe-outline-variant object-contain">
             </div>
         </div>
-        <div class="px-6 py-4 border-t border-vibe-outline-variant flex gap-3 shrink-0">
-            <button type="button" @click="showDetailModal=false" class="flex-1 py-2.5 rounded-lg border border-vibe-outline-variant text-vibe-on-surface-variant font-bold text-sm hover:bg-vibe-surface-dim transition-colors">Tutup</button>
-            <button type="button" @click="openEdit(detail); showDetailModal=false" class="flex-1 py-2.5 rounded-lg bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors active:scale-[0.99]">Ubah</button>
+        <div class="px-6 py-5 border-t border-vibe-outline-variant/50 flex gap-3 shrink-0">
+            <button type="button" @click="showDetailModal=false" class="btn-press flex-1 py-3 rounded-xl border border-vibe-outline-variant/60 text-vibe-on-surface-variant font-bold text-sm hover:text-vibe-on-surface hover:bg-vibe-surface-dim transition-colors">Tutup</button>
+            <button type="button" @click="openEdit(detail); showDetailModal=false" class="btn-press flex-1 py-3 rounded-xl bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors shadow-sm shadow-vibe-primary/20">Ubah</button>
         </div>
     </div>
 </div>
 
 <!-- ============ MODAL: ANGGARAN ============ -->
-<div x-show="showBudgetModal" @keydown.escape.window="showBudgetModal=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" x-transition style="display:none">
-    <div @click.stop class="bg-white rounded-xl w-full max-w-sm border border-vibe-outline-variant p-6">
+<div x-show="showBudgetModal" @keydown.escape.window="showBudgetModal=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-vibe-surface-dim/80 backdrop-blur-sm" x-transition.opacity.duration.200ms style="display:none">
+    <div @click.stop class="bg-white rounded-2xl w-full max-w-sm border border-vibe-outline-variant/50 p-7 shadow-2xl"
+         x-show="showBudgetModal" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-4">
         <h3 class="text-lg font-display font-bold text-vibe-on-surface mb-1">Atur Anggaran Bulanan</h3>
         <p class="text-xs text-vibe-on-surface-variant mb-5" x-text="'Pagu untuk ' + periodeLabel"></p>
         <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Nominal Pagu</label>
@@ -694,9 +735,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-vibe-on-surface-variant">Rp</span>
             <input type="number" step="1" min="0" x-model="budgetNominal" class="w-full pl-9 pr-4 py-3 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors">
         </div>
-        <div class="flex gap-3 mt-6">
-            <button type="button" @click="showBudgetModal=false" class="flex-1 py-2.5 rounded-lg border border-vibe-outline-variant text-vibe-on-surface-variant font-bold text-sm hover:bg-vibe-surface-dim transition-colors">Batal</button>
-            <button type="button" @click="submitBudget()" :disabled="savingBudget" class="flex-1 py-2.5 rounded-lg bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors active:scale-[0.99] disabled:opacity-60" x-text="savingBudget ? 'Menyimpan…' : 'Simpan'"></button>
+        <div class="flex gap-3 mt-8">
+            <button type="button" @click="showBudgetModal=false" class="btn-press flex-1 py-3 rounded-xl border border-vibe-outline-variant/60 text-vibe-on-surface-variant font-bold text-sm hover:text-vibe-on-surface hover:bg-vibe-surface-dim transition-colors">Batal</button>
+            <button type="button" @click="submitBudget()" :disabled="savingBudget" class="btn-press flex-1 py-3 rounded-xl bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors disabled:opacity-60 shadow-sm shadow-vibe-primary/20" x-text="savingBudget ? 'Menyimpan…' : 'Simpan'"></button>
         </div>
     </div>
 </div>
