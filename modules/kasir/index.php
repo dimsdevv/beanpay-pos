@@ -342,7 +342,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
         </div>
 
-        <form action="proses_bayar_langsung.php" method="POST" id="formPOS" class="flex flex-col flex-1 overflow-hidden" enctype="multipart/form-data" @submit.prevent="submitForm()">
+        <form action="proses_bayar_langsung.php" method="POST" id="formPOS" class="flex flex-col flex-1 overflow-hidden" enctype="multipart/form-data">
             <?= csrfField() ?>
             <input type="hidden" name="cart_data" :value="JSON.stringify(cart)">
             <input type="hidden" name="tipe_pesanan" :value="orderType">
@@ -500,12 +500,21 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     </div>
 
                     <!-- Submit -->
-                    <button type="submit" 
-                            :disabled="!isValidOrder()"
-                            class="w-full py-3.5 rounded-xl font-bold text-sm transition-all flex justify-center items-center gap-2"
-                            :class="isValidOrder() ? 'bg-vibe-primary text-white hover:bg-vibe-primary-container shadow-md active:scale-[0.98]' : 'bg-vibe-surface-high text-vibe-on-surface-variant cursor-not-allowed border border-vibe-outline-variant'">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                        <span>BAYAR <span x-text="formatRupiah(grandTotal)"></span></span>
+                    <button type="button" @click="submitForm()" 
+                            :disabled="isSubmitting"
+                            class="w-full py-3.5 rounded-xl font-bold text-sm transition-all flex justify-center items-center gap-2 bg-vibe-primary text-white hover:bg-vibe-primary-container shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+                        <template x-if="!isSubmitting">
+                            <span class="flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                BAYAR <span x-text="formatRupiah(grandTotal)"></span>
+                            </span>
+                        </template>
+                        <template x-if="isSubmitting">
+                            <span class="flex items-center gap-2">
+                                <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                Memproses...
+                            </span>
+                        </template>
                     </button>
                 </div>
             </div>
@@ -611,7 +620,15 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     </div>
                     <div class="flex gap-3">
                         <button type="button" @click="closeTransferModal()" class="flex-1 py-3 rounded-xl border border-vibe-outline-variant text-vibe-on-surface-variant font-bold text-sm hover:bg-vibe-surface-dim transition-colors active:scale-[0.98]">Batal</button>
-                        <button type="submit" class="flex-1 py-3 rounded-xl bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors active:scale-[0.98] shadow-sm">Konfirmasi & Bayar</button>
+                        <button type="button" @click="submitForm()" 
+                                :disabled="isSubmitting"
+                                class="flex-1 py-3 rounded-xl bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors active:scale-[0.98] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span x-show="!isSubmitting">Konfirmasi & Bayar</span>
+                            <span x-show="isSubmitting" class="flex items-center justify-center gap-2">
+                                <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                Memproses...
+                            </span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -646,6 +663,7 @@ document.addEventListener('alpine:init', () => {
         transferRef: '',
         transferBuktiPreview: null,
         transferBuktiNama: '',
+        isSubmitting: false,
         
         // ── Promo ──
         promoCode: '',
@@ -989,19 +1007,19 @@ document.addEventListener('alpine:init', () => {
         formatRupiah(a) { return a ? 'Rp ' + Math.round(a).toLocaleString('id-ID') : 'Rp 0'; },
 
         // Handle form submit with validation
-        async submitForm() {
+        submitForm() {
+            if (this.isSubmitting) return;
+
             if (!this.isValidOrder()) {
-                this.$nextTick(() => {
-                    if (this.paymentIssue) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: this.paymentIssue.title,
-                            text: this.paymentIssue.detail,
-                            confirmButtonColor: '#0F172A',
-                            customClass: { popup: 'rounded-xl' }
-                        });
-                    }
-                });
+                if (this.paymentIssue) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: this.paymentIssue.title,
+                        text: this.paymentIssue.detail,
+                        confirmButtonColor: '#0F172A',
+                        customClass: { popup: 'rounded-xl' }
+                    });
+                }
                 return;
             }
 
@@ -1011,12 +1029,13 @@ document.addEventListener('alpine:init', () => {
                     this.openTransferModal();
                     return;
                 }
-                // Trigger submit form modal
+                this.isSubmitting = true;
                 document.getElementById('formPOS').submit();
                 return;
             }
 
             // Untuk cash & qris, submit langsung
+            this.isSubmitting = true;
             document.getElementById('formPOS').submit();
         }
     }));
