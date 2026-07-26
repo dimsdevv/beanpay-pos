@@ -986,7 +986,39 @@ document.addEventListener('alpine:init', () => {
         isValidOrder() {
             return !this.paymentIssue;
         },
-        formatRupiah(a) { return a ? 'Rp ' + Math.round(a).toLocaleString('id-ID') : 'Rp 0'; }
+        formatRupiah(a) { return a ? 'Rp ' + Math.round(a).toLocaleString('id-ID') : 'Rp 0'; },
+
+        // Handle form submit with validation
+        async submitForm() {
+            if (!this.isValidOrder()) {
+                this.$nextTick(() => {
+                    if (this.paymentIssue) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: this.paymentIssue.title,
+                            text: this.paymentIssue.detail,
+                            confirmButtonColor: '#0F172A',
+                            customClass: { popup: 'rounded-xl' }
+                        });
+                    }
+                });
+                return;
+            }
+
+            // Khusus transfer, submit dilakukan melalui modal
+            if (this.paymentMethod === 'transfer') {
+                if (!this.transferNama.trim() || !this.transferRef.trim() || !this.transferBuktiPreview) {
+                    this.openTransferModal();
+                    return;
+                }
+                // Trigger submit form modal
+                document.getElementById('formPOS').submit();
+                return;
+            }
+
+            // Untuk cash & qris, submit langsung
+            document.getElementById('formPOS').submit();
+        }
     }));
 });
 </script>
