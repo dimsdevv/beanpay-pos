@@ -342,7 +342,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
         </div>
 
-        <form action="proses_bayar_langsung.php" method="POST" id="formPOS" class="flex flex-col flex-1 overflow-hidden" enctype="multipart/form-data">
+        <form action="proses_bayar_langsung.php" method="POST" id="formPOS" class="flex flex-col flex-1 overflow-hidden" enctype="multipart/form-data" @submit.prevent="submitForm()">
             <?= csrfField() ?>
             <input type="hidden" name="cart_data" :value="JSON.stringify(cart)">
             <input type="hidden" name="tipe_pesanan" :value="orderType">
