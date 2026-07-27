@@ -68,11 +68,6 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 
-    // Patch for Hostinger existing tables with wrong collation
-    $pdo->exec("ALTER TABLE pengeluaran CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    $pdo->exec("ALTER TABLE pengeluaran_item CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    $pdo->exec("ALTER TABLE anggaran_bulan CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-
     // ---------------------------------------------------------------
     // Periode terpilih
     // ---------------------------------------------------------------
@@ -159,7 +154,7 @@ try {
         LEFT JOIN resep_menu rm ON rm.menu_id = m.id
         LEFT JOIN bahan_baku b ON b.id = rm.bahan_id
         GROUP BY m.id, m.nama_menu, m.harga
-        ORDER BY (m.harga - COALESCE(SUM(rm.jumlah_dibutuhkan * b.harga_beli), 0)) DESC
+        ORDER BY m.nama_menu ASC
     ")->fetchAll();
     
     foreach ($menuHpp as &$m) {
@@ -194,7 +189,7 @@ try {
     }
     $labaKotor = $omzet - $cogsBulan - $totalBelanja;
 
-} catch (PDOException $e) {
+} catch (\Throwable $e) {
     $db_error = $e->getMessage();
 }
 
