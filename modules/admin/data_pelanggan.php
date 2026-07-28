@@ -113,7 +113,7 @@ require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar.php';
 ?>
 
-<div x-data="pelangganApp()" class="space-y-6">
+<div x-data="pelangganApp()"><div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-2xl font-display font-bold text-vibe-on-surface tracking-tight">Data Pelanggan</h1>
@@ -192,10 +192,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </table>
         </div>
     </div>
-</div>
 
-<!-- Modal Form -->
-<div x-show="showForm" @keydown.escape.window="showForm=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" x-transition style="display:none">
+    <!-- Modal Form -->
+    <div x-show="showForm" @keydown.escape.window="showForm=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" x-transition style="display:none">
     <div @click.stop class="bg-white rounded-xl w-full max-w-md border border-vibe-outline-variant max-h-[90vh] flex flex-col">
         <div class="flex items-center justify-between px-6 py-4 border-b border-vibe-outline-variant shrink-0">
             <div>
@@ -229,6 +228,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <button type="button" @click="submitForm()" :disabled="saving" class="flex-1 py-2.5 rounded-lg bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors active:scale-[0.99] disabled:opacity-60" x-text="saving ? 'Menyimpan…' : (form.id ? 'Simpan Perubahan' : 'Tambah Pelanggan')"></button>
         </div>
     </div>
+</div>
+
 </div>
 
 <script>
@@ -281,11 +282,7 @@ document.addEventListener('alpine:init', () => {
                 fd.append('catatan', this.form.catatan);
 
                 const res = await fetch('data_pelanggan.php', { method: 'POST', body: fd });
-                if (res.redirected) window.location.href = res.url;
-                else {
-                    const text = await res.text();
-                    throw new Error(text);
-                }
+                window.location.href = res.url;
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'Gagal', text: err.message });
             } finally {
@@ -311,11 +308,7 @@ document.addEventListener('alpine:init', () => {
                 fd.append('action', 'delete_pelanggan');
                 fd.append('id', id);
                 const res = await fetch('data_pelanggan.php', { method: 'POST', body: fd });
-                if (res.redirected) window.location.href = res.url;
-                else {
-                    const text = await res.text();
-                    throw new Error(text);
-                }
+                window.location.href = res.url;
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'Gagal', text: err.message });
             }
