@@ -112,7 +112,7 @@ require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar.php';
 ?>
 
-<div class="space-y-6">
+<div x-data="piutangApp()" class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-2xl font-display font-bold text-vibe-on-surface tracking-tight">Piutang</h1>
@@ -230,7 +230,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 </tbody>
             </table>
 <div x-show="showBayar" @keydown.escape.window="showBayar=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" x-transition style="display:none">
-            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" x-transition style="display:none">
     <div @click.stop class="bg-white rounded-xl w-full max-w-md border border-vibe-outline-variant p-6">
         <h3 class="text-lg font-display font-bold text-vibe-on-surface mb-1">Bayar Hutang</h3>
         <p class="text-sm text-vibe-on-surface-variant mb-1">Pelanggan: <span class="font-semibold text-vibe-on-surface" x-text="bayarNama"></span></p>
@@ -259,6 +258,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
         </form>
     </div>
+</div>
+
 </div>
 
 <script>
