@@ -229,12 +229,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     <?php endif; ?>
                 </tbody>
             </table>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Bayar -->
 <div x-show="showBayar" @keydown.escape.window="showBayar=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" x-transition style="display:none">
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" x-transition style="display:none">
     <div @click.stop class="bg-white rounded-xl w-full max-w-md border border-vibe-outline-variant p-6">
         <h3 class="text-lg font-display font-bold text-vibe-on-surface mb-1">Bayar Hutang</h3>
         <p class="text-sm text-vibe-on-surface-variant mb-1">Pelanggan: <span class="font-semibold text-vibe-on-surface" x-text="bayarNama"></span></p>
