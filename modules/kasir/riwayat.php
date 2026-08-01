@@ -477,11 +477,11 @@ document.addEventListener('alpine:init', () => {
         },
 
         getMetodeBadge(m) {
-            const map = { 'cash': 'bg-vibe-secondary-container text-vibe-secondary', 'qris': 'bg-purple-50 text-purple-700', 'transfer': 'bg-blue-50 text-blue-700', 'debit': 'bg-blue-50 text-blue-700' };
+            const map = { 'cash': 'bg-vibe-secondary-container text-vibe-secondary', 'qris': 'bg-purple-50 text-purple-700', 'transfer': 'bg-blue-50 text-blue-700', 'debit': 'bg-blue-50 text-blue-700', 'hutang': 'bg-vibe-error-container text-vibe-error' };
             return map[m] || 'bg-vibe-surface-dim text-vibe-on-surface-variant';
         },
         getMetodeLabel(m) {
-            const map = { 'cash': 'Tunai', 'qris': 'QRIS', 'transfer': 'Transfer', 'debit': 'Transfer' };
+            const map = { 'cash': 'Tunai', 'qris': 'QRIS', 'transfer': 'Transfer', 'debit': 'Transfer', 'hutang': 'Hutang' };
             return map[m] || m;
         },
         formatRp(a) {

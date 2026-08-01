@@ -24,19 +24,29 @@ $pdo->exec("
         id INT AUTO_INCREMENT PRIMARY KEY,
         pelanggan_id INT NOT NULL,
         kasir_id INT NOT NULL,
+        pesanan_id INT DEFAULT NULL,
         rincian TEXT NOT NULL,
         nominal DECIMAL(14,2) NOT NULL DEFAULT 0.00,
         status ENUM('belum_lunas','lunas') NOT NULL DEFAULT 'belum_lunas',
-        metode_bayar ENUM('cash','qris','transfer') DEFAULT NULL,
+        metode_bayar ENUM('cash','qris','transfer','hutang') DEFAULT NULL,
         bukti_transfer VARCHAR(255) DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         lunas_at DATETIME DEFAULT NULL,
         INDEX idx_pelanggan (pelanggan_id),
         INDEX idx_status (status),
+        INDEX idx_pesanan (pesanan_id),
         FOREIGN KEY (pelanggan_id) REFERENCES pelanggan(id) ON DELETE CASCADE,
         FOREIGN KEY (kasir_id) REFERENCES users(id) ON DELETE RESTRICT
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ");
+
+// Migrasi kolom pesanan_id untuk tabel yang sudah ada
+try {
+    $pdo->query("SELECT pesanan_id FROM hutang LIMIT 0");
+} catch (Exception $e) {
+    $pdo->exec("ALTER TABLE hutang ADD COLUMN pesanan_id INT DEFAULT NULL AFTER kasir_id");
+    $pdo->exec("ALTER TABLE hutang ADD INDEX idx_pesanan (pesanan_id)");
+}
 
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -59,8 +69,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $buktiName = handleTransferUpload($_FILES['bukti'], 'tf_hutang');
             }
             
+            ensureMetodePembayaranEnum();
+            
             $pdo->prepare("UPDATE hutang SET status = 'lunas', metode_bayar = ?, bukti_transfer = ?, lunas_at = NOW() WHERE id = ?")
                 ->execute([$metode, $buktiName, $id]);
+            
+            // Jika hutang berasal dari pesanan, update pembayaran agar omzet tercatat
+            if (!empty($hutang['pesanan_id'])) {
+                $pdo->prepare("UPDATE pembayaran SET metode_pembayaran = ?, jumlah_bayar = ?, kembalian = 0, waktu_bayar = NOW() WHERE pesanan_id = ? AND metode_pembayaran = 'hutang'")
+                    ->execute([$metode, $hutang['nominal'], $hutang['pesanan_id']]);
+                // Update sesi kasir pemasukan (gunakan kasir yang melunasi)
+                $stmtSesi2 = $pdo->prepare("SELECT id FROM sesi_kasir WHERE kasir_id = ? AND status = 'buka' LIMIT 1");
+                $stmtSesi2->execute([$_SESSION['user_id']]);
+                if ($sesi2 = $stmtSesi2->fetch()) {
+                    $pdo->prepare("UPDATE sesi_kasir SET total_pemasukan = total_pemasukan + ? WHERE id = ?")
+                        ->execute([$hutang['nominal'], $sesi2['id']]);
+                }
+            }
             
             logAuditAction('bayar_hutang', 'hutang', $id, "Hutang {$hutang['nama_lengkap']} Rp " . number_format($hutang['nominal'], 0, ',', '.') . " lunas via $metode");
             $_SESSION['success'] = "Hutang berhasil dibayar.";

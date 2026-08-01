@@ -18,15 +18,17 @@ CREATE TABLE IF NOT EXISTS hutang (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     pelanggan_id    INT NOT NULL,
     kasir_id        INT NOT NULL,
+    pesanan_id      INT DEFAULT NULL,
     rincian         TEXT NOT NULL,
     nominal         DECIMAL(14,2) NOT NULL DEFAULT 0.00,
     status          ENUM('belum_lunas','lunas') NOT NULL DEFAULT 'belum_lunas',
-    metode_bayar    ENUM('cash','qris','transfer') DEFAULT NULL,
+    metode_bayar    ENUM('cash','qris','transfer','hutang') DEFAULT NULL,
     bukti_transfer  VARCHAR(255) DEFAULT NULL,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     lunas_at        DATETIME DEFAULT NULL,
     INDEX idx_pelanggan (pelanggan_id),
     INDEX idx_status (status),
+    INDEX idx_pesanan (pesanan_id),
     FOREIGN KEY (pelanggan_id) REFERENCES pelanggan(id) ON DELETE CASCADE,
     FOREIGN KEY (kasir_id) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

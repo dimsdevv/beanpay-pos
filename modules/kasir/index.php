@@ -60,6 +60,9 @@ $menus = $pdo->query("
 ")->fetchAll();
 $tables = $pdo->query("SELECT * FROM meja ORDER BY nomor_meja")->fetchAll();
 
+// Fetch pelanggan list for hutang method
+$pelangganList = $pdo->query("SELECT id, nama_lengkap, telepon FROM pelanggan ORDER BY nama_lengkap")->fetchAll();
+
 // Fetch low stock details per menu
 $lowStockDetails = [];
 $stmtLow = $pdo->query("
@@ -350,6 +353,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <input type="hidden" name="nama_pelanggan" :value="customerName">
             <input type="hidden" name="metode_pembayaran" :value="paymentMethod">
             <input type="hidden" name="jumlah_bayar" :value="paymentMethod === 'cash' ? amountReceived : grandTotal">
+            <input type="hidden" name="pelanggan_id" :value="hutangPelangganId">
             <input type="hidden" name="promo_id" :value="appliedPromo ? appliedPromo.id : ''">
 
             <!-- Customer Details -->
@@ -487,6 +491,31 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             <div class="text-[10px] text-vibe-on-surface-variant truncate">BCA 5142777011 a.n. Budi Mulyana</div>
                         </div>
                         <button type="button" @click="openTransferModal()" class="px-3 py-2 bg-vibe-on-surface text-white rounded-md text-xs font-bold transition-colors active:scale-[0.98] shrink-0">Lanjut</button>
+                    </div>
+
+                    <!-- Hutang Customer Selector -->
+                    <div x-show="paymentMethod === 'hutang'" x-transition.opacity.duration.150ms class="space-y-2">
+                        <div class="flex items-center gap-3 bg-vibe-surface-dim border border-vibe-outline-variant rounded-lg p-3">
+                            <div class="w-9 h-9 rounded-lg bg-vibe-accent/10 border border-vibe-accent/20 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-vibe-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-[11px] text-vibe-on-surface-variant">Hutang <span class="font-bold" x-text="formatRupiah(grandTotal)"></span></div>
+                                <div class="text-[10px] text-vibe-on-surface-variant">Catat ke piutang pelanggan</div>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <select x-model="hutangPelangganId" :class="paymentMethod === 'hutang' && !hutangPelangganId ? 'border-vibe-error' : 'border-vibe-outline-variant'"
+                                    class="w-full px-3 py-2.5 bg-white border rounded-md text-sm font-semibold text-vibe-on-surface focus:outline-none focus:border-vibe-on-surface transition-colors appearance-none pr-9">
+                                <option value="">— Pilih pelanggan —</option>
+                                <template x-for="pl in pelangganList" :key="pl.id">
+                                    <option :value="pl.id" x-text="pl.nama_lengkap + (pl.telepon ? ' (' + pl.telepon + ')' : '')"></option>
+                                </template>
+                            </select>
+                            <svg class="w-4 h-4 text-vibe-outline-variant absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                        <p class="text-[10px] text-vibe-on-surface-variant px-1" x-show="paymentMethod === 'hutang' && !hutangPelangganId">Pilih pelanggan untuk mencatat hutang ini.</p>
+                        <p class="text-[10px] text-vibe-on-surface-variant px-1" x-show="hutangPelangganId">Hutang akan dicatat atas nama pelanggan terpilih. Hubungi admin jika pelanggan belum terdaftar.</p>
                     </div>
 
                     <div x-show="paymentIssue" x-transition.opacity.duration.150ms class="flex items-start gap-2 rounded-lg border border-vibe-outline-variant bg-vibe-surface-dim px-3 py-2">
@@ -674,9 +703,13 @@ document.addEventListener('alpine:init', () => {
         // Payment methods config
         methods: [
             { id: 'cash', label: 'Tunai', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>' },
-            { id: 'qris', label: 'QRIS', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>' },
+            { id: 'hutang', label: 'Hutang', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>' },
             { id: 'transfer', label: 'Transfer', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' },
         ],
+
+        // ── Hutang (debt) state ──
+        hutangPelangganId: '',
+        pelangganList: <?= json_encode($pelangganList, JSON_UNESCAPED_SLASHES) ?>,
 
         // ── Low stock details (menu_id -> [{nama, stok, butuh, satuan}]) ──
         lowStockDetails: <?= json_encode($lowStockDetails) ?>,
@@ -1034,7 +1067,24 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            // Untuk cash & qris, submit langsung
+            // Khusus hutang, wajib pilih pelanggan
+            if (this.paymentMethod === 'hutang') {
+                if (!this.hutangPelangganId) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Pilih Pelanggan',
+                        text: 'Pilih pelanggan terlebih dahulu untuk mencatat hutang.',
+                        confirmButtonColor: '#0F172A',
+                        customClass: { popup: 'rounded-xl' }
+                    });
+                    return;
+                }
+                this.isSubmitting = true;
+                document.getElementById('formPOS').submit();
+                return;
+            }
+
+            // Untuk cash, submit langsung
             this.isSubmitting = true;
             document.getElementById('formPOS').submit();
         }

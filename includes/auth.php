@@ -130,6 +130,18 @@ function ensureTransferColumns(): void {
     }
 }
 
+function ensureMetodePembayaranEnum(): void {
+    global $pdo;
+    try {
+        // Test if 'hutang' is accepted
+        $pdo->query("INSERT INTO pembayaran (pesanan_id, sesi_kasir_id, metode_pembayaran, jumlah_bayar) VALUES (999999, 0, 'hutang', 0)");
+        $pdo->exec("DELETE FROM pembayaran WHERE pesanan_id = 999999");
+    } catch (Exception $e) {
+        // If enum constraint fails, alter table
+        $pdo->exec("ALTER TABLE pembayaran MODIFY COLUMN metode_pembayaran ENUM('cash','qris','transfer','hutang') DEFAULT 'cash'");
+    }
+}
+
 function handleTransferUpload(?array $file, string $prefix = 'tf'): ?string {
     if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return null;
     if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) throw new RuntimeException('Upload bukti gagal.');

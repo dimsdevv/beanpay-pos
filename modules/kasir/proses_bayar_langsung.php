@@ -19,10 +19,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $meja_id = !empty($_POST['meja_id']) ? (int)$_POST['meja_id'] : null;
         $nama_pelanggan = $_POST['nama_pelanggan'] ?? '';
         $metode_pembayaran = $_POST['metode_pembayaran'] ?? 'cash';
-        if (!in_array($metode_pembayaran, ['cash', 'qris', 'transfer'], true)) {
+        if (!in_array($metode_pembayaran, ['cash', 'qris', 'transfer', 'hutang'], true)) {
             throw new Exception('Metode pembayaran tidak valid.');
         }
 
+        $pelanggan_id = !empty($_POST['pelanggan_id']) ? (int)$_POST['pelanggan_id'] : null;
+        
+        // Pastikan enum metode_pembayaran mendukung 'hutang'
+        ensureMetodePembayaranEnum();
         $nama_pengirim = '';
         $referensi = '';
         $bukti_transfer = null;
@@ -35,6 +39,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ensureTransferColumns();
             $bukti_transfer = handleTransferUpload($_FILES['bukti_transfer'] ?? null, 'tf_' . date('Hi'));
             if (!$bukti_transfer) throw new Exception('Bukti transfer wajib diupload.');
+        }
+
+        if ($metode_pembayaran === 'hutang') {
+            if (!$pelanggan_id) throw new Exception('Pelanggan wajib dipilih untuk metode Hutang.');
+            // Validasi pelanggan ada
+            $stmtPel = $pdo->prepare("SELECT id FROM pelanggan WHERE id = ?");
+            $stmtPel->execute([$pelanggan_id]);
+            if (!$stmtPel->fetch()) throw new Exception('Pelanggan tidak ditemukan.');
         }
 
         $jumlah_bayar = (float)($_POST['jumlah_bayar'] ?? 0);
@@ -131,10 +143,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pajak_nominal = round((($subtotal_bersih + $service_nominal) * $pajak_persen) / 100 / 100) * 100;
         $total_harga = $subtotal_bersih + $service_nominal + $pajak_nominal;
 
-        if ($jumlah_bayar < $total_harga) {
-            throw new Exception("Jumlah bayar kurang dari total tagihan!");
+        if ($metode_pembayaran === 'hutang') {
+            $jumlah_bayar = 0;
+            $kembalian = 0;
+        } else {
+            if ($jumlah_bayar < $total_harga) {
+                throw new Exception("Jumlah bayar kurang dari total tagihan!");
+            }
+            $kembalian = $jumlah_bayar - $total_harga;
         }
-        $kembalian = $jumlah_bayar - $total_harga;
 
         // 4. Insert Pesanan (State: pending)
         $stmtPesan = $pdo->prepare("INSERT INTO pesanan (nomor_pesanan, meja_id, waiter_id, tipe_pesanan, nama_pelanggan, subtotal, service_persen, pajak_persen, promo_id, diskon_nominal, service_nominal, pajak_nominal, total_harga, status_pesanan, waktu_pesan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
@@ -199,12 +216,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmtBayar->execute([$pesanan_id, $sesi_id, $metode_pembayaran, $jumlah_bayar, $kembalian,
             $nama_pengirim ?: null, $referensi ?: null, $bukti_transfer]);
 
+        // 7b. Jika metode HUTANG, catat ke tabel hutang (piutang)
+        if ($metode_pembayaran === 'hutang') {
+            $stmtPel = $pdo->prepare("SELECT nama_lengkap FROM pelanggan WHERE id = ?");
+            $stmtPel->execute([$pelanggan_id]);
+            $pelanggan = $stmtPel->fetch();
+            
+            // Buat rincian dari cart
+            $rincianItems = [];
+            foreach ($cartItems as $item) {
+                $stmtMenu = $pdo->prepare("SELECT nama_menu FROM menu WHERE id = ?");
+                $stmtMenu->execute([$item['id']]);
+                $menu = $stmtMenu->fetch();
+                $rincianItems[] = $item['qty'] . "x " . ($menu['nama_menu'] ?? 'Menu');
+            }
+            $rincian = implode(", ", $rincianItems);
+            if ($nama_pelanggan) $rincian .= " (Pelanggan: " . $nama_pelanggan . ")";
+            
+            $pdo->prepare("INSERT INTO hutang (pelanggan_id, kasir_id, pesanan_id, rincian, nominal, status, metode_bayar, created_at) VALUES (?, ?, ?, ?, ?, 'belum_lunas', 'hutang', NOW())")
+                ->execute([$pelanggan_id, $_SESSION['user_id'], $pesanan_id, $rincian, $total_harga]);
+            
+            logAuditAction('tambah_hutang', 'hutang', null, "Hutang {$pelanggan['nama_lengkap']} Rp " . number_format($total_harga, 0, ',', '.') . " dari pesanan " . $nomor_pesanan);
+        }
+
         // 7b. Update status pesanan jadi dibayar
         $pdo->prepare("UPDATE pesanan SET status_pesanan = 'dibayar' WHERE id = ?")->execute([$pesanan_id]);
 
-        // 7c. Update Sesi Kasir
-        $stmtUpdateSesi = $pdo->prepare("UPDATE sesi_kasir SET total_pemasukan = total_pemasukan + ? WHERE id = ?");
-        $stmtUpdateSesi->execute([$total_harga, $sesi_id]);
+        // 7c. Update Sesi Kasir (hutang tidak menambah pemasukan tunai)
+        if ($metode_pembayaran !== 'hutang') {
+            $stmtUpdateSesi = $pdo->prepare("UPDATE sesi_kasir SET total_pemasukan = total_pemasukan + ? WHERE id = ?");
+            $stmtUpdateSesi->execute([$total_harga, $sesi_id]);
+        }
 
         // 8. Update Meja ke kosong
         if ($meja_id && $tipe_pesanan === 'dine_in') {
@@ -213,10 +255,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $pdo->commit();
 
-        $_SESSION['success'] = "Pembayaran berhasil! Kembalian: Rp " . number_format($kembalian, 0, ',', '.');
+        if ($metode_pembayaran === 'hutang') {
+            $_SESSION['success'] = "Hutang berhasil dicatat atas nama " . ($pelanggan['nama_lengkap'] ?? 'Pelanggan') . ".";
+        } else {
+            $_SESSION['success'] = "Pembayaran berhasil! Kembalian: Rp " . number_format($kembalian, 0, ',', '.');
+        }
         header('Location: ' . BASE_URL . '/modules/kasir/struk.php?pesanan_id=' . $pesanan_id);
         exit;
-
     } catch (Exception $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
