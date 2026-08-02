@@ -141,25 +141,32 @@ $items = $stmtItems->fetchAll();
         }
 
         @media print {
+            * { 
+                -webkit-print-color-adjust: exact; 
+            }
             body { 
                 background: transparent; 
                 padding: 0; 
+                margin: 0;
                 display: block; 
-                font-size: 15px; /* Larger text for 58mm thermal */
-                font-weight: 600; /* Bolder text for clearer print */
+                font-size: 13px;
+                font-weight: bold;
+                width: 100%;
             }
             .ticket { 
                 box-shadow: none; 
-                padding: 0; 
-                width: 100%; 
-                max-width: 58mm; /* Force exact physical paper width */
+                padding: 2mm; 
+                width: 100%;
+                max-width: none;
                 margin: 0; 
             }
+            h2 { font-size: 16px; }
+            .flex-between span, td { font-size: 12px; }
             .divider { 
                 border-top: 1px dashed #000; 
-                margin: 8px 0; 
+                margin: 6px 0; 
             }
-            .no-print { display: none; }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
