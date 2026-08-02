@@ -135,6 +135,11 @@ $items = $stmtItems->fetchAll();
             margin-top: 10px;
         }
         
+        
+        @page {
+            margin: 0;
+        }
+
         @media print {
             body { 
                 background: transparent; 
