@@ -56,7 +56,7 @@ $items = $stmtItems->fetchAll();
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
+            font-size: 13px; /* Slightly larger base */
             color: #000;
             background: #e2e8f0;
             margin: 0;
@@ -65,9 +65,10 @@ $items = $stmtItems->fetchAll();
             justify-content: center;
         }
         .ticket {
-            width: 300px; /* Thermal printer width */
+            width: 100%;
+            max-width: 280px; /* Adjusted for preview */
             background: #fff;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
         h1, h2, h3, h4, h5, h6, p {
@@ -135,8 +136,24 @@ $items = $stmtItems->fetchAll();
         }
         
         @media print {
-            body { background: transparent; padding: 0; display: block; }
-            .ticket { box-shadow: none; padding: 0; width: 100%; max-width: 300px; margin: 0 auto; }
+            body { 
+                background: transparent; 
+                padding: 0; 
+                display: block; 
+                font-size: 15px; /* Larger text for 58mm thermal */
+                font-weight: 600; /* Bolder text for clearer print */
+            }
+            .ticket { 
+                box-shadow: none; 
+                padding: 0; 
+                width: 100%; 
+                max-width: 58mm; /* Force exact physical paper width */
+                margin: 0; 
+            }
+            .divider { 
+                border-top: 1px dashed #000; 
+                margin: 8px 0; 
+            }
             .no-print { display: none; }
         }
     </style>
