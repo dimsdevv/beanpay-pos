@@ -42,12 +42,25 @@ function ensureKeuanganTables(): void {
             nama_bahan VARCHAR(120) NOT NULL,
             qty DECIMAL(12,2) NOT NULL DEFAULT 0.00,
             satuan VARCHAR(50) DEFAULT '',
+            satuan_beli VARCHAR(50) DEFAULT '',
+            konversi DECIMAL(12,4) NOT NULL DEFAULT 1.0000,
+            qty_beli DECIMAL(12,2) NOT NULL DEFAULT 0.00,
             harga_satuan DECIMAL(14,2) NOT NULL DEFAULT 0.00,
             subtotal DECIMAL(14,2) NOT NULL DEFAULT 0.00,
             FOREIGN KEY (pengeluaran_id) REFERENCES pengeluaran(id) ON DELETE CASCADE,
             INDEX idx_bahan (bahan_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
     ");
+    
+    // Auto-patch existing tables for unit conversions
+    $cols = $pdo->query("SHOW COLUMNS FROM pengeluaran_item")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('satuan_beli', $cols)) {
+        $pdo->exec("ALTER TABLE pengeluaran_item ADD COLUMN satuan_beli VARCHAR(50) DEFAULT '' AFTER satuan");
+        $pdo->exec("ALTER TABLE pengeluaran_item ADD COLUMN konversi DECIMAL(12,4) NOT NULL DEFAULT 1.0000 AFTER satuan_beli");
+        $pdo->exec("ALTER TABLE pengeluaran_item ADD COLUMN qty_beli DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER konversi");
+        // Migrate old data
+        $pdo->exec("UPDATE pengeluaran_item SET qty_beli = qty, satuan_beli = satuan, konversi = 1 WHERE qty_beli = 0 AND qty > 0");
+    }
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS anggaran_bulan (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -95,20 +108,39 @@ try {
         $total = 0;
         foreach ($items as $it) {
             $nama   = trim((string)($it['nama_bahan'] ?? ''));
-            $qty    = (float)($it['qty'] ?? 0);
-            $harga  = (float)($it['harga_satuan'] ?? 0);
-            $bid    = !empty($it['bahan_id']) ? (int)$it['bahan_id'] : null;
+            $qtyBeli = (float)($it['qty_beli'] ?? $it['qty'] ?? 0);
+            $harga   = (float)($it['harga_satuan'] ?? 0);
+            $bid     = !empty($it['bahan_id']) ? (int)$it['bahan_id'] : null;
+            
             if ($nama === '') continue;
-            if ($qty <= 0) throw new Exception("Jumlah untuk \"$nama\" harus lebih dari 0.");
+            if ($qtyBeli <= 0) throw new Exception("Jumlah untuk \"$nama\" harus lebih dari 0.");
             if ($harga < 0) throw new Exception("Harga untuk \"$nama\" tidak valid.");
-            $sub = round($qty * $harga, 2);
+            
+            $satuanBeli = trim((string)($it['satuan_beli'] ?? $it['satuan'] ?? ''));
+            $konversi = (float)($it['konversi'] ?? 1);
+            if ($konversi <= 0) $konversi = 1;
+            
+            // Calculate base qty
+            $baseQty = $qtyBeli * $konversi;
+            if ($baseQty <= 0) throw new Exception("Jumlah konversi untuk \"$nama\" harus lebih dari 0.");
+            
+            $sub = round($qtyBeli * $harga, 2);
+            
+            // Average costing logic for harga_beli per base unit
+            // (Total Price / Total Base Qty)
+            $hargaBaseUnit = $baseQty > 0 ? ($sub / $baseQty) : 0;
+
             $total += $sub;
             $cleanItems[] = [
                 'bahan_id'      => $bid,
                 'nama_bahan'    => $nama,
-                'qty'           => $qty,
-                'satuan'        => trim((string)($it['satuan'] ?? '')),
-                'harga_satuan'  => $harga,
+                'qty'           => $baseQty, // Qty saved to inventory is baseQty
+                'satuan'        => trim((string)($it['satuan'] ?? '')), // Base unit name
+                'satuan_beli'   => $satuanBeli,
+                'konversi'      => $konversi,
+                'qty_beli'      => $qtyBeli,
+                'harga_satuan'  => $harga, // Price per purchase unit
+                'harga_base'    => $hargaBaseUnit, // Calculated price per base unit
                 'subtotal'      => $sub,
             ];
         }
@@ -169,18 +201,45 @@ try {
             $auditAction = 'tambah_pengeluaran';
         }
 
-        // Insert item + (opsional) update stok & harga beli
+        // Insert item + (opsional) update stok & harga beli (average cost)
         $stmtItem = $pdo->prepare("
-            INSERT INTO pengeluaran_item (pengeluaran_id, bahan_id, nama_bahan, qty, satuan, harga_satuan, subtotal)
-            VALUES (?,?,?,?,?,?,?)
+            INSERT INTO pengeluaran_item (pengeluaran_id, bahan_id, nama_bahan, qty, satuan, satuan_beli, konversi, qty_beli, harga_satuan, subtotal)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
         ");
         foreach ($cleanItems as $ci) {
-            $stmtItem->execute([$expenseId, $ci['bahan_id'], $ci['nama_bahan'], $ci['qty'], $ci['satuan'], $ci['harga_satuan'], $ci['subtotal']]);
+            $stmtItem->execute([
+                $expenseId, $ci['bahan_id'], $ci['nama_bahan'], $ci['qty'], $ci['satuan'], 
+                $ci['satuan_beli'], $ci['konversi'], $ci['qty_beli'], $ci['harga_satuan'], $ci['subtotal']
+            ]);
+            
             if ($stokUpdated && $ci['bahan_id']) {
-                $pdo->prepare("
-                    UPDATE bahan_baku SET stok_sekarang = stok_sekarang + ?, harga_beli = ?
-                    WHERE id = ?
-                ")->execute([$ci['qty'], $ci['harga_satuan'], $ci['bahan_id']]);
+                // Average Cost Calculation
+                $stmtStok = $pdo->prepare("SELECT stok_sekarang, harga_beli FROM bahan_baku WHERE id = ?");
+                $stmtStok->execute([$ci['bahan_id']]);
+                $b = $stmtStok->fetch();
+                
+                if ($b) {
+                    $oldStok = (float)$b['stok_sekarang'];
+                    $oldHarga = (float)$b['harga_beli'];
+                    $newQty = $ci['qty']; // this is baseQty
+                    $newPriceBase = $ci['harga_base'];
+                    
+                    // Prevent negative stock affecting average cost calculation weirdly
+                    $validOldStok = max(0, $oldStok); 
+                    
+                    $totalValueOld = $validOldStok * $oldHarga;
+                    $totalValueNew = $newQty * $newPriceBase;
+                    
+                    $stokAkhir = $oldStok + $newQty; // actual new stock
+                    $stokForAvg = $validOldStok + $newQty;
+                    
+                    $avgHarga = $stokForAvg > 0 ? ($totalValueOld + $totalValueNew) / $stokForAvg : $newPriceBase;
+                    
+                    $pdo->prepare("
+                        UPDATE bahan_baku SET stok_sekarang = ?, harga_beli = ?
+                        WHERE id = ?
+                    ")->execute([$stokAkhir, $avgHarga, $ci['bahan_id']]);
+                }
             }
         }
 
@@ -238,7 +297,7 @@ try {
         $stmt->execute([$id]);
         $row = $stmt->fetch();
         if (!$row) throw new Exception('Data tidak ditemukan.');
-        $stmtI = $pdo->prepare("SELECT bahan_id, nama_bahan, qty, satuan, harga_satuan FROM pengeluaran_item WHERE pengeluaran_id = ?");
+        $stmtI = $pdo->prepare("SELECT bahan_id, nama_bahan, qty_beli, satuan_beli, konversi, qty, satuan, harga_satuan, subtotal FROM pengeluaran_item WHERE pengeluaran_id = ?");
         $stmtI->execute([$id]);
         $row['items'] = $stmtI->fetchAll();
         $response = ['success' => true, 'data' => $row];

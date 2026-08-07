@@ -202,7 +202,7 @@ require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar.php';
 ?>
 
-<div class="space-y-6">
+<div class="space-y-6 w-full">
     <?php if ($db_error): ?>
         <div class="bg-vibe-error-container text-vibe-error p-6 rounded-xl border border-vibe-error/30 animate-fade-in">
             <div class="flex items-start gap-4">
@@ -219,7 +219,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
         </div>
     <?php else: ?>
-        <div x-data="keuanganApp()">
+        <div x-data="keuanganApp()" class="w-full">
 
 <style>
 /* Micro-interactions & Emil Kowalski Animations */
@@ -249,10 +249,20 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+@media (min-width: 1024px) {
+    .kpi-grid-responsive {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+    .kpi-card-responsive {
+        width: 100% !important;
+    }
+}
 </style>
 
     <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-2xl bg-vibe-primary/10 flex items-center justify-center shrink-0">
@@ -285,15 +295,15 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
     <!-- KPI strip -->
-    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory lg:grid lg:grid-cols-4 gap-4 pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pb-0 mt-8">
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
+    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory kpi-grid-responsive gap-4 pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pb-0 mt-8">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
             <div>
                 <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total Pengeluaran</div>
                 <div class="text-2xl font-black text-vibe-on-surface mt-1.5"><?= formatRupiah($totalBelanja) ?></div>
             </div>
             <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70"><?= count($expenses) ?> transaksi · <?= $periodeLabel ?></div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
             <div>
                 <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Pemakaian Anggaran</div>
                 <div class="text-2xl font-black mt-1.5 <?= $sisaBudget < 0 ? 'text-vibe-error' : 'text-vibe-on-surface' ?>">
@@ -304,14 +314,14 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 Sisa <?= formatRupiah($sisaBudget) ?>
             </div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
             <div>
                 <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Rata-rata Pengeluaran Harian</div>
                 <div class="text-2xl font-black text-vibe-on-surface mt-1.5"><?= formatRupiah($rataHari) ?></div>
             </div>
             <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70">Dihitung berdasarkan <?= $hariAcuan ?> hari buka</div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
             <div>
                 <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total Modal Bahan (HPP)</div>
                 <div class="text-2xl font-black text-vibe-accent mt-1.5"><?= formatRupiah($cogsBulan) ?></div>

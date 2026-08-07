@@ -247,7 +247,12 @@ $items = $stmtItems->fetchAll();
             <span>Pembayaran (<?= $metodeStruk ?>):</span>
             <span><?= number_format($order['jumlah_bayar'], 0, ',', '.') ?></span>
         </div>
-        <?php if ($order['metode_pembayaran'] !== 'hutang'): ?>
+        <?php if ($order['metode_pembayaran'] === 'hutang'): ?>
+        <div class="flex-between mb-2" style="font-weight:bold;">
+            <span>* HUTANG - BELUM DIBAYAR</span>
+            <span></span>
+        </div>
+        <?php elseif ($order['metode_pembayaran'] !== 'hutang'): ?>
         <div class="flex-between mb-2">
             <span>Kembalian:</span>
             <span><?= number_format($order['kembalian'], 0, ',', '.') ?></span>

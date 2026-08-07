@@ -91,6 +91,7 @@ $metodeWarna = [
     'qris'     => ['badge' => 'bg-purple-50 text-purple-700', 'label' => 'QRIS'],
     'transfer' => ['badge' => 'bg-blue-50 text-blue-700', 'label' => 'Transfer'],
     'debit'    => ['badge' => 'bg-blue-50 text-blue-700', 'label' => 'Transfer'],
+    'hutang'   => ['badge' => 'bg-vibe-error-container text-vibe-error', 'label' => 'Hutang'],
 ];
 
 require_once __DIR__ . '/../../includes/sidebar.php';

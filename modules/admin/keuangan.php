@@ -197,7 +197,7 @@ require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar.php';
 ?>
 
-<div class="space-y-6">
+<div class="space-y-6 w-full">
     <?php if ($db_error): ?>
         <div class="bg-vibe-error-container text-vibe-error p-6 rounded-xl border border-vibe-error/30 animate-fade-in">
             <div class="flex items-start gap-4">
@@ -214,7 +214,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
         </div>
     <?php else: ?>
-        <div x-data="keuanganApp()">
+        <div x-data="keuanganApp()" class="w-full">
 
 <style>
 /* Micro-interactions & Emil Kowalski Animations */
@@ -244,10 +244,20 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+@media (min-width: 1024px) {
+    .kpi-grid-responsive {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+    .kpi-card-responsive {
+        width: 100% !important;
+    }
+}
 </style>
 
     <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-2xl bg-vibe-primary/10 flex items-center justify-center shrink-0">
@@ -272,23 +282,23 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Anggaran
             </button>
-            <button @click="openAdd()" class="btn-press w-full lg:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-vibe-primary text-white rounded-xl text-sm font-bold hover:bg-vibe-primary-container transition-colors shadow-sm shadow-vibe-primary/20">
+            <a href="<?= BASE_URL ?>/modules/admin/catat-pengeluaran.php" class="btn-press w-full lg:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-vibe-primary text-white rounded-xl text-sm font-bold hover:bg-vibe-primary-container transition-colors shadow-sm shadow-vibe-primary/20">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                 Catat Pengeluaran
-            </button>
+            </a>
         </div>
     </div>
 
     <!-- KPI strip -->
-    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory lg:grid lg:grid-cols-4 gap-4 pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pb-0 mt-8">
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
+    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory kpi-grid-responsive gap-4 pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pb-0 mt-8">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
             <div>
                 <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total Pengeluaran</div>
                 <div class="text-2xl font-black text-vibe-on-surface mt-1.5"><?= formatRupiah($totalBelanja) ?></div>
             </div>
             <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70"><?= count($expenses) ?> transaksi · <?= $periodeLabel ?></div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
             <div>
                 <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Pemakaian Anggaran</div>
                 <div class="text-2xl font-black mt-1.5 <?= $sisaBudget < 0 ? 'text-vibe-error' : 'text-vibe-on-surface' ?>">
@@ -299,14 +309,14 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 Sisa <?= formatRupiah($sisaBudget) ?>
             </div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
             <div>
                 <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Rata-rata Pengeluaran Harian</div>
                 <div class="text-2xl font-black text-vibe-on-surface mt-1.5"><?= formatRupiah($rataHari) ?></div>
             </div>
             <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70">Dihitung berdasarkan <?= $hariAcuan ?> hari buka</div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] lg:w-auto snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
             <div>
                 <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total Modal Bahan (HPP)</div>
                 <div class="text-2xl font-black text-vibe-accent mt-1.5"><?= formatRupiah($cogsBulan) ?></div>
@@ -468,9 +478,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                     <button @click="showDetail(e)" title="Detail" class="p-2 rounded-lg text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-container transition-colors btn-press">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     </button>
-                                    <button @click="openEdit(e)" title="Ubah" class="p-2 rounded-lg text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-container transition-colors btn-press">
+                                    <a :href="'<?= BASE_URL ?>/modules/admin/catat-pengeluaran.php?id=' + e.id" title="Ubah" class="p-2 rounded-lg text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-container transition-colors btn-press inline-block">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    </button>
+                                    </a>
                                     <button @click="confirmDelete(e)" title="Hapus" class="p-2 rounded-lg text-vibe-on-surface-variant hover:text-vibe-error hover:bg-vibe-error-container transition-colors btn-press">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
@@ -529,154 +539,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         </div>
     </div>
 
-<!-- ============ MODAL: FORM PENGELUARAN ============ -->
-<div x-show="showForm" @keydown.escape.window="showForm=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-vibe-surface-dim/80 backdrop-blur-sm" x-transition.opacity.duration.200ms style="display:none">
-    <div @click.stop class="bg-white rounded-2xl w-full max-w-2xl border border-vibe-outline-variant/50 max-h-[90vh] flex flex-col shadow-2xl"
-         x-show="showForm" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-4">
-        <div class="flex items-center justify-between px-6 py-5 border-b border-vibe-outline-variant/50 shrink-0">
-            <div>
-                <h3 class="text-lg font-display font-bold text-vibe-on-surface" x-text="form.id ? 'Ubah Pengeluaran' : 'Catat Pengeluaran'"></h3>
-                <p class="text-xs text-vibe-on-surface-variant">Masukkan detail pengeluaran. Harga akan terisi otomatis berdasarkan riwayat belanja Anda.</p>
-            </div>
-            <button @click="showForm=false" class="p-2 text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim rounded-lg transition-colors btn-press">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto min-h-0 px-6 py-5 space-y-4">
-            <!-- Baris atas -->
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Tanggal</label>
-                    <input type="date" x-model="form.tanggal" class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Kategori</label>
-                    <select x-model="form.kategori" class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors">
-                        <option value="operasional">Operasional</option>
-                        <option value="pembukaan">Belanja Pembukaan</option>
-                        <option value="lainnya">Lainnya</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Supplier / Toko</label>
-                    <input type="text" x-model="form.supplier" placeholder="Mis. Toko Sembako Makmur" class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Metode Bayar</label>
-                    <select x-model="form.metode_bayar" class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors">
-                        <option value="cash">Tunai</option>
-                        <option value="qris">QRIS</option>
-                        <option value="transfer">Transfer</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Item belanja -->
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <label class="text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider">Item Bahan</label>
-                    <button type="button" @click="addItem()" class="inline-flex items-center gap-1 text-[11px] font-bold text-vibe-primary hover:underline">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                        Tambah item
-                    </button>
-                </div>
-
-                <div class="space-y-2">
-                    <template x-for="(it, idx) in form.items" :key="idx">
-                        <div class="flex flex-col sm:flex-row sm:items-end gap-2 bg-white border border-vibe-outline-variant/50 rounded-lg p-2.5 transition-all">
-                            
-                            <!-- Bahan selector -->
-                            <div class="w-full sm:flex-1">
-                                <label class="block sm:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-1">Bahan Baku</label>
-                                <select x-model="it.bahan_id" @change="pickBahan(idx)" class="w-full px-3 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-primary text-sm transition-colors">
-                                    <option value="">— Pilih bahan —</option>
-                                    <template x-for="b in bahanList" :key="b.id">
-                                        <option :value="b.id" x-text="b.nama"></option>
-                                    </template>
-                                    <option value="__custom">⇥ Ketik baru...</option>
-                                </select>
-                                <input x-show="it.bahan_id === '__custom'" type="text" x-model="it.nama_bahan" placeholder="Nama bahan baru" class="w-full mt-1.5 px-3 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-primary text-sm transition-colors">
-                            </div>
-
-                            <!-- Qty & Satuan -->
-                            <div class="flex gap-1.5 w-full sm:w-[28%]">
-                                <div class="flex-1">
-                                    <label class="block sm:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-1">Jumlah</label>
-                                    <input type="number" step="0.01" min="0" x-model="it.qty" @input="recalc(idx)" placeholder="Qty" class="w-full px-3 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-primary text-sm transition-colors">
-                                </div>
-                                <div class="flex-1">
-                                    <label class="block sm:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-1">Satuan</label>
-                                    <input type="text" x-model="it.satuan_view" @input="syncSatuan(idx)" placeholder="Satuan" class="w-full px-3 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-primary text-sm transition-colors">
-                                </div>
-                            </div>
-
-                            <!-- Harga & Subtotal -->
-                            <div class="flex gap-1.5 w-full sm:w-[28%] items-end">
-                                <div class="flex-1">
-                                    <label class="block sm:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-1">Harga</label>
-                                    <div class="relative">
-                                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-vibe-on-surface-variant">Rp</span>
-                                        <input type="number" step="1" min="0" x-model="it.harga_satuan" @input="recalc(idx)" placeholder="0" class="w-full pl-7 pr-2 py-2 bg-white border border-vibe-outline-variant rounded-md focus:outline-none focus:border-vibe-primary text-sm transition-colors">
-                                    </div>
-                                </div>
-                                <div class="shrink-0 pb-1 ml-1 min-w-[70px]">
-                                    <span class="block sm:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-0.5">Subtotal</span>
-                                    <span class="text-sm font-bold text-vibe-on-surface block text-right" x-text="fmt(it.subtotal)"></span>
-                                </div>
-                            </div>
-
-                            <!-- Delete button -->
-                            <div class="shrink-0 flex items-center justify-end w-full sm:w-auto pt-3 sm:pt-0 mt-3 sm:mt-0 border-t border-vibe-outline-variant/30 sm:border-0">
-                                <button type="button" @click="removeItem(idx)" class="btn-press flex items-center gap-1.5 text-vibe-on-surface-variant hover:text-vibe-error transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    <span class="sm:hidden text-xs font-medium">Hapus</span>
-                                </button>
-                            </div>
-                        </div>
-                    </template>
-                    <div x-show="form.items.length === 0" class="text-center py-4 text-xs text-vibe-on-surface-variant bg-vibe-surface-dim rounded-lg">
-                        Belum ada item belanja. Klik "Tambah item" untuk mulai mencatat.
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-end gap-2 mt-2">
-                    <span class="text-xs text-vibe-on-surface-variant">Total</span>
-                    <span class="text-lg font-black text-vibe-primary" x-text="fmt(formTotal())"></span>
-                </div>
-            </div>
-
-            <!-- Bukti & opsi -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Upload Bukti Nota/Struk (Opsional)</label>
-                    <input type="file" accept="image/*" @change="onBukti($event)" class="w-full text-xs text-vibe-on-surface-variant file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-vibe-surface-container file:text-vibe-on-surface file:font-semibold file:cursor-pointer hover:file:bg-vibe-outline-variant transition-colors">
-                    <p class="text-[11px] text-vibe-on-surface-variant mt-1" x-show="form.buktiName" x-text="'Tersimpan: ' + form.buktiName"></p>
-                </div>
-                <div class="flex flex-col justify-end">
-                    <label class="flex items-center gap-2.5 cursor-pointer select-none bg-vibe-surface-dim rounded-lg px-3 py-2.5">
-                        <input type="checkbox" x-model="form.stok_updated" class="w-4 h-4 accent-vibe-primary">
-                        <span class="text-sm text-vibe-on-surface font-medium">Perbarui stok &amp; harga modal</span>
-                    </label>
-                    <p class="text-[11px] text-vibe-on-surface-variant mt-1.5">Centang opsi ini agar jumlah stok dan harga modal bahan ikut diperbarui.</p>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Catatan Tambahan (Opsional)</label>
-                <textarea x-model="form.keterangan" rows="2" placeholder="Tuliskan catatan tambahan jika ada..." class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors resize-none"></textarea>
-            </div>
-        </div>
-
-        <div class="px-6 py-5 border-t border-vibe-outline-variant/50 flex gap-3 shrink-0">
-            <button type="button" @click="showForm=false" class="btn-press flex-1 py-3 rounded-xl border border-vibe-outline-variant/60 text-vibe-on-surface-variant font-bold text-sm hover:text-vibe-on-surface hover:bg-vibe-surface-dim transition-colors">Batal</button>
-            <button type="button" @click="submitForm()" :disabled="saving" class="btn-press flex-1 py-3 rounded-xl bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors disabled:opacity-60 shadow-sm shadow-vibe-primary/20" x-text="saving ? 'Menyimpan…' : (form.id ? 'Simpan Perubahan' : 'Catat Pengeluaran')"></button>
-        </div>
-    </div>
-</div>
 
 <!-- ============ MODAL: DETAIL ============ -->
 <div x-show="showDetailModal" @keydown.escape.window="showDetailModal=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-vibe-surface-dim/80 backdrop-blur-sm" x-transition.opacity.duration.200ms style="display:none">
@@ -714,7 +576,13 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <div class="flex items-center justify-between bg-white border border-vibe-outline-variant rounded-lg px-3.5 py-2.5">
                             <div class="min-w-0 flex-1">
                                 <div class="text-sm font-semibold text-vibe-on-surface truncate" x-text="it.nama_bahan"></div>
-                                <div class="text-[11px] text-vibe-on-surface-variant"><span x-text="it.qty"></span> <span x-text="it.satuan"></span> × Rp <span x-text="Number(it.harga_satuan).toLocaleString('id-ID')"></span></div>
+                                <div class="text-[11px] text-vibe-on-surface-variant">
+                                    <span x-text="it.qty_beli"></span> <span x-text="it.satuan_beli"></span>
+                                    <template x-if="it.konversi && it.konversi != 1">
+                                        <span> (Masuk gudang: <span x-text="it.qty"></span> <span x-text="it.satuan"></span>)</span>
+                                    </template>
+                                    × Rp <span x-text="Number(it.harga_satuan).toLocaleString('id-ID')"></span>
+                                </div>
                             </div>
                             <div class="text-right shrink-0 ml-3 font-bold text-sm text-vibe-on-surface" x-text="fmt(it.subtotal)"></div>
                         </div>
@@ -767,28 +635,14 @@ document.addEventListener('alpine:init', () => {
         periode: '<?= $periode ?>',
         periodeLabel: '<?= $periodeLabel ?>',
         search: '',
-        saving: false,
         savingBudget: false,
 
-        bahanList: <?= json_encode($bahanList, JSON_UNESCAPED_SLASHES) ?>,
         expenses: <?= json_encode($expenses, JSON_UNESCAPED_SLASHES) ?>,
         budgetNominal: <?= (int)$budget ?>,
 
-        showForm: false,
         showDetailModal: false,
         showBudgetModal: false,
         detail: null,
-
-        form: {
-            id: null, tanggal: '<?= date('Y-m-d') ?>', supplier: '', kategori: 'operasional',
-            metode_bayar: 'cash', keterangan: '', stok_updated: true, buktiName: '',
-            items: []
-        },
-        buktiFile: null,
-
-        init() {
-            if (this.form.items.length === 0) this.addItem();
-        },
 
         gantiPeriode(e) {
             const v = e.target.value;
@@ -806,102 +660,7 @@ document.addEventListener('alpine:init', () => {
             );
         },
 
-        // ---- Form item helpers ----
-        addItem() {
-            this.form.items.push({ bahan_id: '', nama_bahan: '', qty: '', satuan_view: '', satuan: '', harga_satuan: '', subtotal: 0 });
-        },
-        removeItem(i) { this.form.items.splice(i, 1); if (this.form.items.length === 0) this.addItem(); },
-        pickBahan(i) {
-            const it = this.form.items[i];
-            if (it.bahan_id === '__custom') { it.nama_bahan = ''; it.satuan = ''; it.satuan_view = ''; it.harga_satuan = ''; this.recalc(i); return; }
-            const b = this.bahanList.find(x => String(x.id) === String(it.bahan_id));
-            if (b) {
-                it.nama_bahan = b.nama;
-                it.satuan = b.satuan; it.satuan_view = b.satuan;
-                const last = (b.last_price !== null && b.last_price !== '') ? b.last_price : b.harga_beli;
-                it.harga_satuan = last || '';
-            }
-            this.recalc(i);
-        },
-        syncSatuan(i) {
-            const it = this.form.items[i];
-            it.satuan = it.satuan_view;
-        },
-        recalc(i) {
-            const it = this.form.items[i];
-            const q = parseFloat(it.qty) || 0;
-            const h = parseFloat(it.harga_satuan) || 0;
-            it.subtotal = Math.round(q * h);
-        },
-        formTotal() {
-            return this.form.items.reduce((s, it) => s + (parseFloat(it.subtotal) || 0), 0);
-        },
 
-        // ---- Open ----
-        openAdd() {
-            this.form = { id: null, tanggal: '<?= date('Y-m-d') ?>', supplier: '', kategori: 'operasional', metode_bayar: 'cash', keterangan: '', stok_updated: true, buktiName: '', items: [] };
-            this.buktiFile = null;
-            this.addItem();
-            this.showForm = true;
-        },
-        openEdit(e) {
-            this.form = {
-                id: e.id, tanggal: e.tanggal, supplier: e.supplier || '', kategori: e.kategori,
-                metode_bayar: e.metode_bayar, keterangan: e.keterangan || '', stok_updated: !!e.stok_updated,
-                buktiName: e.bukti || '', items: (e.items || []).map(it => ({
-                    bahan_id: it.bahan_id ? String(it.bahan_id) : '', nama_bahan: it.nama_bahan,
-                    qty: it.qty, satuan_view: it.satuan, satuan: it.satuan,
-                    harga_satuan: it.harga_satuan, subtotal: it.subtotal
-                }))
-            };
-            if (this.form.items.length === 0) this.addItem();
-            this.buktiFile = null;
-            this.showForm = true;
-        },
-        onBukti(e) { this.buktiFile = e.target.files[0] || null; },
-
-        // ---- Submit ----
-async submitForm() {
-    // filter hanya item yang valid
-    const validItems = this.form.items.filter(i =>
-        i.nama_bahan && parseFloat(i.qty) > 0 && parseFloat(i.harga_satuan) > 0
-    );
-    if (validItems.length === 0) {
-        Swal.fire({icon:'warning', title:'Isi setidaknya satu item dengan data lengkap'});
-        return;
-    }
-    this.saving = true;
-    try {
-        const fd = new FormData();
-        fd.append('csrf_token', '<?= generateCsrfToken() ?>');
-        fd.append('action', 'save');
-        fd.append('id', this.form.id || '');
-        fd.append('tanggal', this.form.tanggal);
-        fd.append('supplier', this.form.supplier);
-        fd.append('kategori', this.form.kategori);
-        fd.append('metode_bayar', this.form.metode_bayar);
-        fd.append('keterangan', this.form.keterangan);
-        fd.append('stok_updated', this.form.stok_updated ? '1' : '0');
-        const clean = this.form.items.map(it => ({
-            bahan_id: it.bahan_id && it.bahan_id !== '__custom' ? it.bahan_id : null,
-            nama_bahan: it.nama_bahan,
-            qty: it.qty,
-            satuan: it.satuan,
-            harga_satuan: it.harga_satuan
-        }));
-        fd.append('items', JSON.stringify(clean));
-        if (this.buktiFile) fd.append('bukti', this.buktiFile);
-        const res = await fetch('proses_pengeluaran.php', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message || 'Gagal menyimpan.');
-        Swal.fire({ icon: 'success', title: 'Tersimpan', text: data.message, timer: 1500, showConfirmButton: false });
-        setTimeout(() => window.location.reload(), 700);
-    } catch (err) {
-        Swal.fire({ icon: 'error', title: 'Gagal', text: err.message });
-    } finally {
-        this.saving = false;
-    }
-},
 
         // ---- Detail ----
         showDetail(e) { this.detail = e; this.showDetailModal = true; },

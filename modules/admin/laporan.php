@@ -207,8 +207,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
             <div class="space-y-4">
                 <?php 
-                $metodeColors = ['cash'=>['bg-theme-ocean','text-theme-ocean'],'qris'=>['bg-theme-twilight','text-theme-twilight'],'transfer'=>['bg-theme-sun','text-theme-sun'],'debit'=>['bg-theme-sun','text-theme-sun']];
-                $metodeLabelMap = ['cash'=>'Tunai','qris'=>'QRIS','transfer'=>'Transfer','debit'=>'Transfer'];
+                $metodeColors = ['cash'=>['bg-theme-ocean','text-theme-ocean'],'qris'=>['bg-theme-twilight','text-theme-twilight'],'transfer'=>['bg-theme-sun','text-theme-sun'],'debit'=>['bg-theme-sun','text-theme-sun'],'hutang'=>['bg-red-100','text-red-600']];
+                $metodeLabelMap = ['cash'=>'Tunai','qris'=>'QRIS','transfer'=>'Transfer','debit'=>'Transfer','hutang'=>'Hutang'];
                 foreach($metodeData as $m): 
                 $colors = $metodeColors[$m['metode_pembayaran']] ?? ['bg-gray-500','text-gray-600'];
                 $labelMetode = $metodeLabelMap[$m['metode_pembayaran']] ?? strtoupper($m['metode_pembayaran']);
@@ -515,7 +515,8 @@ document.addEventListener('alpine:init', () => {
                 'cash': 'bg-theme-ocean/10 text-theme-ocean border border-theme-ocean/20',
                 'qris': 'bg-theme-twilight/10 text-theme-twilight border border-theme-twilight/20',
                 'transfer': 'bg-theme-sun/10 text-theme-sun border border-theme-sun/20',
-                'debit': 'bg-theme-sun/10 text-theme-sun border border-theme-sun/20'
+                'debit': 'bg-theme-sun/10 text-theme-sun border border-theme-sun/20',
+                'hutang': 'bg-red-100 text-red-600 border border-red-200'
             };
             return colors[method] || 'bg-gray-100 text-gray-500';
         }

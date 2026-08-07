@@ -72,5 +72,5 @@ require_once __DIR__ . '/helpers.php';
     </style>
 
 </head>
-<body class="text-vibe-on-surface h-screen flex overflow-hidden bg-vibe-bg antialiased" x-data="{ sidebarOpen: false }">
+<body class="text-vibe-on-surface h-screen w-full flex overflow-hidden bg-vibe-bg antialiased" x-data="{ sidebarOpen: false }">
 

@@ -336,17 +336,19 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 </div>
                 
                 <div x-show="['add', 'edit'].includes(modalMode)">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Satuan</label>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Satuan Dasar (Untuk Resep)</label>
                     <input type="text" name="satuan" x-model="form.satuan" :required="['add', 'edit'].includes(modalMode)"
-                           placeholder="Cth: Gram, ml, Pcs"
-                           class="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-sage/30 focus:border-theme-sage outline-none font-medium transition-all placeholder-gray-300">
+                           placeholder="Cth: Gram, ml, Pcs (Bukan Kg/Dus)"
+                           class="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-sage/30 focus:border-theme-sage outline-none font-medium transition-all placeholder-gray-400">
+                    <p class="text-xs text-gray-500 mt-1.5 font-medium">Gunakan satuan terkecil yang akan dipakai di resep. Pembelian per Dus/Kg otomatis dikonversi di halaman kasir.</p>
                 </div>
                 
                 <div x-show="['add', 'edit'].includes(modalMode)">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Harga Beli (Modal per Satuan)</label>
-                    <input type="number" step="0.01" name="harga_beli" x-model="form.harga_beli" :required="['add', 'edit'].includes(modalMode)"
-                           placeholder="Cth: 15000"
-                           class="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-sage/30 focus:border-theme-sage outline-none font-medium transition-all placeholder-gray-300">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Harga Modal per Satuan Dasar <span class="text-xs font-normal text-gray-500">(Opsional)</span></label>
+                    <input type="number" step="0.01" name="harga_beli" x-model="form.harga_beli"
+                           placeholder="Cth: 0 (Kosongkan saja)"
+                           class="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-theme-sage/30 focus:border-theme-sage outline-none font-medium transition-all placeholder-gray-400">
+                    <p class="text-xs text-gray-500 mt-1.5 font-medium">Bisa dikosongkan (0). Harga modal akan <strong>dihitung rata-ratanya secara otomatis</strong> setiap kali Anda mencatat Pembelian Bahan di kasir.</p>
                 </div>
                 
                 <div x-show="modalMode === 'add'">
