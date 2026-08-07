@@ -94,7 +94,7 @@ try {
     // Daftar pengeluaran periode + nested items
     // ---------------------------------------------------------------
     $stmtExpenses = $pdo->prepare("
-        SELECT p.*, u.nama_lengkap AS input_nama
+        SELECT p.*, u.nama_lengkap AS input_nama, u.role AS input_role
         FROM pengeluaran p
         LEFT JOIN users u ON u.id = p.input_by
         WHERE p.tanggal >= ? AND p.tanggal <= LAST_DAY(?)
@@ -456,7 +456,13 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             <td class="px-5 py-4 text-sm text-vibe-on-surface-variant group-hover:text-vibe-on-surface transition-colors" x-text="e.tanggal"></td>
                             <td class="px-5 py-4">
                                 <div class="font-bold text-sm text-vibe-on-surface" x-text="e.supplier || '—'"></div>
-                                <div class="text-[11px] font-medium text-vibe-on-surface-variant opacity-80" x-text="(e.items ? e.items.length : 0) + ' item · ' + (e.input_nama || 'admin')"></div>
+                                <div class="text-[11px] font-medium text-vibe-on-surface-variant opacity-80 flex items-center gap-1.5">
+                                    <span x-text="(e.items ? e.items.length : 0) + ' item'"></span>
+                                    <span>·</span>
+                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold"
+                                        :class="e.input_role === 'kasir' ? 'bg-vibe-accent/10 text-vibe-accent' : 'bg-vibe-primary/10 text-vibe-primary'"
+                                        x-text="e.input_role === 'kasir' ? 'KASIR: ' + (e.input_nama || '-') : (e.input_nama || 'ADMIN')"></span>
+                                </div>
                             </td>
                             <td class="px-5 py-4">
                                 <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold border"

@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../includes/auth.php';
 
 header('Content-Type: application/json');
 
-requireRole(['admin']);
+requireRole(['admin', 'kasir']);
 requireCsrfToken();
 
 // ---------------------------------------------------------------
@@ -154,10 +154,14 @@ try {
         $oldStokUpdated = 0;
         $oldItems = [];
         if ($id > 0) {
-            $stmtOld = $pdo->prepare("SELECT stok_updated, bukti FROM pengeluaran WHERE id = ?");
+            $stmtOld = $pdo->prepare("SELECT stok_updated, bukti, input_by FROM pengeluaran WHERE id = ?");
             $stmtOld->execute([$id]);
             $old = $stmtOld->fetch();
             if (!$old) throw new Exception('Pengeluaran tidak ditemukan.');
+            // Kasir hanya bisa ubah pengeluaran miliknya sendiri
+            if ($_SESSION['role'] === 'kasir' && (int)$old['input_by'] !== (int)$_SESSION['user_id']) {
+                throw new Exception('Anda hanya bisa mengubah pengeluaran yang Anda input sendiri.');
+            }
             $oldStokUpdated = (int)$old['stok_updated'];
             if ($oldStokUpdated) {
                 $stmtOI = $pdo->prepare("SELECT bahan_id, qty FROM pengeluaran_item WHERE pengeluaran_id = ?");
@@ -263,10 +267,14 @@ try {
         if ($id <= 0) throw new Exception('ID tidak valid.');
 
         $pdo->beginTransaction();
-        $stmt = $pdo->prepare("SELECT stok_updated, bukti, supplier, total FROM pengeluaran WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT stok_updated, bukti, supplier, total, input_by FROM pengeluaran WHERE id = ?");
         $stmt->execute([$id]);
         $row = $stmt->fetch();
         if (!$row) throw new Exception('Pengeluaran tidak ditemukan.');
+        // Kasir hanya bisa hapus pengeluaran miliknya sendiri
+        if ($_SESSION['role'] === 'kasir' && (int)$row['input_by'] !== (int)$_SESSION['user_id']) {
+            throw new Exception('Anda hanya bisa menghapus pengeluaran yang Anda input sendiri.');
+        }
 
         if ($row['stok_updated']) {
             $stmtI = $pdo->prepare("SELECT bahan_id, qty FROM pengeluaran_item WHERE pengeluaran_id = ?");
