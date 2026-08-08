@@ -268,7 +268,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Metode Pembayaran</label>
             <select name="metode_bayar" x-model="bayarMetode" class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors mb-4">
                 <option value="cash">Tunai</option>
-                <option value="qris">QRIS</option>
                 <option value="transfer">Transfer</option>
             </select>
             
