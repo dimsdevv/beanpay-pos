@@ -59,6 +59,11 @@ $menus = $pdo->query("
     ORDER BY k.nama_kategori, m.nama_menu
 ")->fetchAll();
 $tables = $pdo->query("SELECT * FROM meja ORDER BY nomor_meja")->fetchAll();
+$bahanList = $pdo->query("SELECT id, nama_bahan FROM bahan_baku ORDER BY nama_bahan")->fetchAll();
+<?= csrfField() ?>
+
+// Fetch bahan baku list for menu creation (kasir)
+$bahanList = $pdo->query("SELECT id, nama_bahan AS nama, satuan FROM bahan_baku ORDER BY nama_bahan")->fetchAll();
 
 // Fetch pelanggan list for hutang method
 $pelangganList = $pdo->query("SELECT id, nama_lengkap, telepon FROM pelanggan ORDER BY nama_lengkap")->fetchAll();
@@ -220,11 +225,17 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         <div class="mb-4">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-xl md:text-2xl font-display font-bold text-vibe-on-surface tracking-tight">Menu</h2>
-                <!-- Desktop cart toggle -->
-                <button @click="showCart = true" class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-vibe-primary text-white text-xs font-bold rounded-md hover:bg-vibe-primary-container transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    Order <span class="bg-white/20 px-1.5 py-0.5 rounded text-white" x-text="cart.reduce((s,i)=>s+i.qty,0) || '0'"></span>
-                </button>
+                <div class="flex items-center gap-2">
+                    <!-- Desktop cart toggle -->
+                    <button @click="showCart = true" class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-vibe-primary text-white text-xs font-bold rounded-md hover:bg-vibe-primary-container transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        Order <span class="bg-white/20 px-1.5 py-0.5 rounded text-white" x-text="cart.reduce((s,i)=>s+i.qty,0) || '0'"></span>
+                    </button>
+                    <button @click="openMenuForm()" class="flex items-center gap-2 px-3 py-1.5 bg-white border border-vibe-outline-variant text-vibe-on-surface text-xs font-bold rounded-md hover:bg-vibe-surface-dim hover:border-vibe-primary transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Tambah Menu
+                    </button>
+                </div>
             </div>
             <div class="relative mb-3">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-vibe-outline-variant">
@@ -261,10 +272,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         <div class="flex-1 overflow-y-auto rounded-lg pb-2">
             <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 <template x-for="menu in filteredMenus" :key="menu.id">
-                    <button @click="addToCart(menu)" 
-                            :disabled="menu.status === 'habis' || menu.missing_ingredients > 0"
-                            class="group flex flex-col text-left bg-white border rounded-xl overflow-hidden active:scale-[0.97] transition-all duration-150"
-                            :class="(menu.status === 'habis' || menu.missing_ingredients > 0) ? 'border-vibe-outline-variant/50 opacity-60 cursor-not-allowed' : 'border-vibe-outline-variant hover:border-vibe-on-surface'">
+                    <div @click="addToCart(menu)" 
+                            class="group flex flex-col text-left bg-white border rounded-xl overflow-hidden active:scale-[0.97] transition-all duration-150 relative"
+                            :class="(menu.status === 'habis' || menu.missing_ingredients > 0) ? 'border-vibe-outline-variant/50 opacity-60 cursor-not-allowed' : 'border-vibe-outline-variant hover:border-vibe-on-surface cursor-pointer'">
                         <div class="w-full h-24 md:h-32 bg-vibe-surface-dim relative overflow-hidden">
                             <template x-if="menu.gambar">
                                 <img :src="'../../assets/images/' + menu.gambar" class="w-full h-full object-cover" alt="">
@@ -290,7 +300,11 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             <h3 class="font-semibold text-xs md:text-sm text-vibe-on-surface mb-1 leading-tight line-clamp-2" x-text="menu.nama_menu"></h3>
                             <div class="font-bold font-display text-xs md:text-sm text-vibe-primary mt-auto" x-text="formatRupiah(menu.harga)"></div>
                         </div>
-                    </button>
+                        <button type="button" @click.stop="openEditMenu(menu)" title="Ubah menu"
+                                class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-white/90 border border-vibe-outline-variant text-vibe-on-surface-variant hover:text-vibe-primary hover:border-vibe-primary shadow-sm flex items-center justify-center transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                    </div>
                 </template>
             </div>
             <template x-if="filteredMenus.length === 0">
@@ -621,8 +635,42 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                         <div>
                                             <div class="text-sm font-bold text-vibe-on-surface">Ketuk untuk unggah</div>
                                             <div class="text-[11px] text-vibe-on-surface-variant">JPG, PNG, atau WebP · Maks 2MB</div>
-                                        </div>
-                                    </div>
+</form>
+    </div>
+
+    <!-- Modal tambah/ubah menu -->
+    <div x-show="showMenuForm" @keydown.escape.window="showMenuForm=false" class="fixed inset-0 z-50 flex items-center justify-center bg-vibe-on-surface/40 backdrop-blur-sm" x-transition.opacity.style="display:none">
+        <div @click.stop class="bg-white rounded-2xl w-full max-w-2xl border border-vibe-outline-variant shadow-2xl"
+             x-show="showMenuForm" x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-95 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-4">
+            <div class="flex items-center justify-between px-6 py-5 border-bottom border-vibe-outline-variant shrink-0">
+                <div>
+                    <h3 class="text-xl font-display font-bold text-vibe-on-surface" x-text="editingMenuId ? 'Edit Menu' : 'Buat Menu Baru'"></h3>
+                    <button @click="showMenuForm=false" class="p-2 text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto min-h-0 px-6 py-6 space-y-5">
+                    <!-- Balance Check -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="text-(availableA)/100 text-vibe-on-surface-variant bg-vibe-surface-dim p-3 text-center">
+                            <puhur></puhur>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="text-lg font-bold text-vibe-on-surface">Modul Persediaan & Stok Bahan</module-module>
+                        </div>
+                    </div>
+
+                    <!-- Balance Summary -->
+                    <div class="flex flex-cols-1 md:grid-cols-2 gap-2 items-center">
+                        <div>
+                            <div class="mb-2.5">
+                                <p class="text-sm font-sec-bold text-vibe-on-surface mb-1">Barang bebas</via-
+                                </div
                                 </template>
                                 <template x-if="transferBuktiPreview">
                                     <div class="flex items-center gap-4 w-full">
@@ -664,6 +712,93 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         </form>
     </div>
 
+    <!-- Modal tambah menu kasir -->
+    <div x-show="showMenuForm" @keydown.escape.window="showMenuForm=false" class="fixed inset-0 z-50 flex items-center justify-center bg-vibe-on-surface/40 p-4 backdrop-blur-sm" x-transition.opacity style="display:none">
+        <div @click.stop class="w-full max-w-3xl max-h-[92vh] overflow-hidden rounded-2xl bg-white border border-vibe-outline-variant shadow-2xl flex flex-col" x-show="showMenuForm" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4 scale-[0.98]" x-transition:enter-end="opacity-100 translate-y-0 scale-100">
+            <div class="px-6 py-5 border-b border-vibe-outline-variant flex items-start justify-between gap-4 shrink-0 bg-vibe-surface-dim/50">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-vibe-primary/10 text-vibe-primary text-[11px] font-bold mb-3">Kasir dapat tambah menu</div>
+                    <h3 class="text-xl font-display font-black text-vibe-on-surface tracking-tight">Menu baru, langsung siap dipesan</h3>
+                    <p class="text-sm text-vibe-on-surface-variant mt-1 max-w-xl">Isi menu, harga jual bebas, lalu tambahkan resep bahan. Semua perubahan tercatat di audit log.</p>
+                </div>
+                <button type="button" @click="showMenuForm=false" class="p-2 rounded-lg text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-2">Nama Menu</label>
+                        <input type="text" x-model="menuForm.nama_menu" placeholder="Contoh: Es Kopi Susu Pembukaan" class="w-full px-4 py-3 bg-white border border-vibe-outline-variant rounded-xl focus:outline-none focus:border-vibe-primary text-sm font-semibold text-vibe-on-surface">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-2">Kategori</label>
+                        <select x-model="menuForm.kategori_id" class="w-full px-4 py-3 bg-white border border-vibe-outline-variant rounded-xl focus:outline-none focus:border-vibe-primary text-sm font-semibold text-vibe-on-surface">
+                            <option value="">Pilih kategori</option>
+                            <template x-for="kat in kategoris" :key="kat.id">
+                                <option :value="kat.id" x-text="kat.nama_kategori"></option>
+                            </template>
+                        </select>
+                        <div class="flex gap-2 mt-2">
+                            <input type="text" x-model="newKategoriName" @keydown.enter.prevent="addKasirKategori()" placeholder="Kategori baru" class="flex-1 px-3 py-2 bg-vibe-surface-dim border border-transparent rounded-lg focus:outline-none focus:border-vibe-primary text-xs font-semibold">
+                            <button type="button" @click="addKasirKategori()" :disabled="savingKategori || !newKategoriName.trim()" class="px-3 py-2 rounded-lg bg-vibe-on-surface text-white text-xs font-bold disabled:opacity-50">Tambah</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-2">Harga Jual</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-vibe-on-surface-variant text-sm font-black">Rp</span>
+                            <input type="number" x-model="menuForm.harga" min="0" step="1" placeholder="0" class="w-full pl-11 pr-4 py-3 bg-white border border-vibe-outline-variant rounded-xl focus:outline-none focus:border-vibe-primary text-sm font-black text-vibe-on-surface">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-vibe-outline-variant bg-vibe-surface-dim/50 p-4">
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <div>
+                            <h4 class="text-sm font-black text-vibe-on-surface">Resep bahan</h4>
+                            <p class="text-xs text-vibe-on-surface-variant mt-1">Minimal satu bahan wajib diisi agar menu bisa dipesan.</p>
+                        </div>
+                        <button type="button" @click="addMenuIngredient()" class="px-3 py-2 rounded-lg bg-white border border-vibe-outline-variant text-vibe-primary text-xs font-bold hover:border-vibe-primary transition-colors">+ Bahan</button>
+                    </div>
+                    <div class="space-y-2">
+                        <template x-for="(item, index) in menuForm.items" :key="index">
+                            <div class="grid grid-cols-1 md:grid-cols-[1fr_120px_80px_40px] gap-2 items-end bg-white border border-vibe-outline-variant/70 rounded-xl p-3">
+                                <div>
+                                    <label class="block md:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-1">Bahan</label>
+                                    <select x-model="item.bahan_id" @change="pickMenuIngredient(index)" class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-primary text-sm font-semibold">
+                                        <option value="">Pilih bahan</option>
+                                        <template x-for="bahan in bahanList" :key="bahan.id">
+                                            <option :value="bahan.id" x-text="bahan.nama"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block md:hidden text-[10px] font-bold text-vibe-on-surface-variant uppercase mb-1">Jumlah</label>
+                                    <input type="number" x-model="item.jumlah" min="0" step="0.01" placeholder="0" class="w-full px-3 py-2.5 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-primary text-sm font-bold">
+                                </div>
+                                <div class="px-3 py-2.5 bg-vibe-surface-dim rounded-lg text-sm font-bold text-vibe-on-surface-variant" x-text="item.satuan || 'satuan'"></div>
+                                <button type="button" @click="removeMenuIngredient(index)" class="h-10 rounded-lg text-vibe-on-surface-variant hover:text-vibe-error hover:bg-vibe-error-container transition-colors">
+                                    <svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                    <div x-show="menuFormIssue" class="mt-3 text-xs font-bold text-vibe-error" x-text="menuFormIssue"></div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 border-t border-vibe-outline-variant bg-white flex gap-3 shrink-0">
+                <button type="button" @click="showMenuForm=false" class="flex-1 py-3 rounded-xl border border-vibe-outline-variant text-vibe-on-surface-variant font-bold hover:bg-vibe-surface-dim transition-colors">Batal</button>
+                <button type="button" @click="saveKasirMenu()" :disabled="savingMenu" class="flex-1 py-3 rounded-xl bg-vibe-primary text-white font-black hover:bg-vibe-primary-container transition-colors disabled:opacity-50 shadow-sm shadow-vibe-primary/20">
+                    <span x-show="!savingMenu">Simpan Menu</span>
+                    <span x-show="savingMenu" class="inline-flex items-center justify-center gap-2"><svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Menyimpan...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -671,9 +806,18 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('posApp', () => ({
         // ── Menu ──
         menus: <?= json_encode($menus) ?>,
+        bahanList: <?= json_encode($bahanList) ?>,
+        kategoris: <?= json_encode($categories) ?>,
         searchQuery: '',
         selectedCategory: 'all',
         
+        // ── Menu Form ──
+        showMenuForm: false,
+        savingMenu: false,
+        savingKategori: false,
+        newKategoriName: '',
+        menuForm: { nama_menu: '', kategori_id: '', harga: '', status: 'tersedia', items: [] },
+
         // ── Cart ──
         cart: [],
         showCart: false,
@@ -737,11 +881,189 @@ document.addEventListener('alpine:init', () => {
             };
         },
 
+        // ── Menu form actions (kasir) ──
+        openMenuForm() {
+            this.menuForm = { nama_menu: '', kategori_id: '', harga: '', status: 'tersedia', items: [] };
+            this.addMenuIngredient();
+            this.newKategoriName = '';
+            this.showMenuForm = true;
+        },
+        addMenuIngredient() {
+            this.menuForm.items.push({ bahan_id: '', jumlah: '', satuan: '' });
+        },
+        removeMenuIngredient(index) {
+            this.menuForm.items.splice(index, 1);
+            if (this.menuForm.items.length === 0) this.addMenuIngredient();
+        },
+        pickMenuIngredient(index) {
+            const it = this.menuForm.items[index];
+            const bahan = this.bahanList.find(b => String(b.id) === String(it.bahan_id));
+            it.satuan = bahan ? bahan.satuan : '';
+        },
+        get menuFormIssue() {
+            if (!this.menuForm.nama_menu.trim()) return 'Nama menu wajib diisi.';
+            if (!this.menuForm.kategori_id) return 'Pilih kategori terlebih dahulu.';
+            if ((parseFloat(this.menuForm.harga) || 0) <= 0) return 'Harga jual harus lebih dari 0.';
+            const valid = this.menuForm.items.filter(i => i.bahan_id && (parseFloat(i.jumlah) || 0) > 0);
+            if (valid.length === 0) return 'Tambahkan minimal satu bahan agar menu bisa dipesan.';
+            return '';
+        },
+        async saveKasirMenu() {
+            if (this.savingMenu) return;
+            if (this.menuFormIssue) {
+                Swal.fire({ icon: 'warning', title: 'Data belum lengkap', text: this.menuFormIssue, confirmButtonColor: '#0F172A' });
+                return;
+            }
+            this.savingMenu = true;
+            try {
+                const fd = new FormData();
+                fd.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+                fd.append('action', 'save_menu');
+                fd.append('nama_menu', this.menuForm.nama_menu.trim());
+                fd.append('kategori_id', this.menuForm.kategori_id);
+                fd.append('harga', this.menuForm.harga);
+                fd.append('status', this.menuForm.status || 'tersedia');
+                fd.append('items', JSON.stringify(this.menuForm.items.map(i => ({ bahan_id: i.bahan_id, jumlah: i.jumlah }))));
+                const res = await fetch('proses_tambah_menu.php', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Gagal menyimpan menu.');
+                Swal.fire({ icon: 'success', title: 'Menu tersimpan', text: data.message, timer: 1300, showConfirmButton: false });
+                setTimeout(() => window.location.reload(), 700);
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: e.message, confirmButtonColor: '#0F172A' });
+            } finally {
+                this.savingMenu = false;
+            }
+        },
+        async addKasirKategori() {
+            const nama = this.newKategoriName.trim();
+            if (!nama || this.savingKategori) return;
+            this.savingKategori = true;
+            try {
+                const fd = new FormData();
+                fd.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+                fd.append('action', 'add_kategori');
+                fd.append('nama_kategori', nama);
+                const res = await fetch('proses_tambah_menu.php', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Gagal membuat kategori.');
+                this.kategoris.push({ id: data.id, nama_kategori: nama });
+                this.newKategoriName = '';
+                this.menuForm.kategori_id = data.id;
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: e.message, confirmButtonColor: '#0F172A' });
+            } finally {
+                this.savingKategori = false;
+            }
+        },
+
         // ── Constants from DB ──
         SERVICE_PERCENT: <?= $service_persen_db ?>,
         SERVICE_ACTIVE: <?= $service_aktif ? 'true' : 'false' ?>,
         TAX_PERCENT: <?= $pajak_persen_db ?>,
         TAX_ACTIVE: <?= $pajak_aktif ? 'true' : 'false' ?>,
+
+        // ── Menu form actions ──
+        openMenuForm() {
+            this.menuForm = { nama_menu: '', kategori_id: '', harga: '', status: 'tersedia', items: [] };
+            this.addMenuIngredient();
+            this.showMenuForm = true;
+        },
+        async openEditMenu(menu) {
+            try {
+                const fd = new FormData();
+                fd.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+                fd.append('action', 'get_menu');
+                fd.append('id', menu.id);
+                const res = await fetch('proses_tambah_menu.php', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Gagal mengambil data menu.');
+                const m = data.data;
+                this.menuForm = {
+                    id: m.id,
+                    nama_menu: m.nama_menu,
+                    kategori_id: m.kategori_id,
+                    harga: m.harga,
+                    status: m.status,
+                    items: (m.items && m.items.length ? m.items : [{}]).map(i => ({
+                        bahan_id: i.bahan_id ? String(i.bahan_id) : '',
+                        jumlah: i.jumlah_dibutuhkan,
+                        satuan: i.satuan || ''
+                    }))
+                };
+                this.showMenuForm = true;
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: e.message, confirmButtonColor: '#0F172A' });
+            }
+        },
+        addMenuIngredient() {
+            this.menuForm.items.push({ bahan_id: '', jumlah: '', satuan: '' });
+        },
+        removeMenuIngredient(index) {
+            this.menuForm.items.splice(index, 1);
+            if (this.menuForm.items.length === 0) this.addMenuIngredient();
+        },
+        pickMenuIngredient(index) {
+            const item = this.menuForm.items[index];
+            const bahan = this.bahanList.find(b => String(b.id) === String(item.bahan_id));
+            item.satuan = bahan ? bahan.satuan : '';
+        },
+        get menuFormIssue() {
+            if (!this.menuForm.nama_menu.trim()) return 'Nama menu wajib diisi.';
+            if (!this.menuForm.kategori_id) return 'Kategori wajib dipilih.';
+            if ((parseFloat(this.menuForm.harga) || 0) <= 0) return 'Harga jual harus lebih dari 0.';
+            const validItems = this.menuForm.items.filter(i => i.bahan_id && (parseFloat(i.jumlah) || 0) > 0);
+            if (validItems.length === 0) return 'Tambahkan minimal satu bahan agar menu bisa dipesan.';
+            return '';
+        },
+        async saveKasirMenu() {
+            if (this.savingMenu) return;
+            if (this.menuFormIssue) {
+                Swal.fire({ icon: 'warning', title: 'Data belum lengkap', text: this.menuFormIssue, confirmButtonColor: '#0F172A' });
+                return;
+            }
+            this.savingMenu = true;
+            try {
+                const fd = new FormData();
+                fd.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+                fd.append('action', 'save_menu');
+                fd.append('nama_menu', this.menuForm.nama_menu.trim());
+                fd.append('kategori_id', this.menuForm.kategori_id);
+                fd.append('harga', this.menuForm.harga);
+                fd.append('status', this.menuForm.status);
+                fd.append('items', JSON.stringify(this.menuForm.items.map(i => ({ bahan_id: i.bahan_id, jumlah: i.jumlah }))));
+                const res = await fetch('proses_tambah_menu.php', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Gagal menyimpan menu.');
+                Swal.fire({ icon: 'success', title: 'Menu tersimpan', text: data.message, timer: 1300, showConfirmButton: false });
+                setTimeout(() => window.location.reload(), 700);
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: e.message, confirmButtonColor: '#0F172A' });
+            } finally {
+                this.savingMenu = false;
+            }
+        },
+        async addKasirKategori() {
+            const nama = this.newKategoriName.trim();
+            if (!nama || this.savingKategori) return;
+            this.savingKategori = true;
+            try {
+                const fd = new FormData();
+                fd.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+                fd.append('action', 'add_kategori');
+                fd.append('nama_kategori', nama);
+                const res = await fetch('proses_tambah_menu.php', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Gagal membuat kategori.');
+                this.kategoris.push({ id: data.id, nama_kategori: nama });
+                this.newKategoriName = '';
+                this.menuForm.kategori_id = data.id;
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: e.message, confirmButtonColor: '#0F172A' });
+            } finally {
+                this.savingKategori = false;
+            }
+        },
 
         // ── Computed ──
         get filteredMenus() {
