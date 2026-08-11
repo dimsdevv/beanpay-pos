@@ -17,6 +17,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
 <div x-data="tambahMenu()" class="max-w-3xl mx-auto">
 
+    <?= csrfField() ?>
+
     <!-- Back Navigation -->
     <a href="<?= BASE_URL ?>/modules/kasir/index.php" class="btn-press inline-flex items-center gap-2 text-sm font-semibold text-vibe-on-surface-variant hover:text-vibe-on-surface transition-colors mb-6 group">
         <svg class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
