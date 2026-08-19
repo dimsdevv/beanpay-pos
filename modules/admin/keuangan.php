@@ -587,7 +587,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
