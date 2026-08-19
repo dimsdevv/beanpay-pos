@@ -251,16 +251,16 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-vibe-primary/10 flex items-center justify-center shrink-0">
-                    <svg class="w-6 h-6 text-vibe-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h18M5 13V7a2 2 0 012-2h10a2 2 0 012 2v6m-6 4h2a2 2 0 002-2V9M3 13v4a2 2 0 002 2h14a2 2 0 002-2v-4"/></svg>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-vibe-primary/10 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-vibe-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h18M5 13V7a2 2 0 012-2h10a2 2 0 012 2v6m-6 4h2a2 2 0 002-2V9M3 13v4a2 2 0 002 2h14a2 2 0 002-2v-4"/></svg>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-display font-bold text-vibe-on-surface tracking-tight">Administrasi Keuangan</h1>
-                    <p class="text-sm text-vibe-on-surface-variant mt-1">Catat pengeluaran bahan baku dan pantau margin keuntungan menu.</p>
+                    <h1 class="text-xl sm:text-2xl font-display font-bold text-vibe-on-surface tracking-tight">Administrasi Keuangan</h1>
+                    <p class="text-xs sm:text-sm text-vibe-on-surface-variant mt-0.5 sm:mt-1 leading-relaxed">Catat pengeluaran bahan baku dan pantau margin keuntungan menu.</p>
                 </div>
             </div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-nowrap items-center gap-3 w-full lg:w-auto mt-6 lg:mt-0">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-nowrap items-center gap-3 w-full lg:w-auto mt-4 lg:mt-0">
             <label class="relative col-span-1 sm:col-span-2 lg:col-span-1 w-full lg:w-auto">
                 <select @change="gantiPeriode($event)" class="appearance-none bg-white border border-vibe-outline-variant/60 rounded-xl pl-4 pr-10 py-3 text-sm font-semibold text-vibe-on-surface focus:outline-none focus:border-vibe-primary transition-colors cursor-pointer w-full hover:bg-vibe-surface-dim">
                     <?php foreach ($bulanOptions as $bo): ?>
@@ -326,9 +326,16 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     <span class="text-sm text-vibe-on-surface-variant">Pengeluaran kasir</span>
                     <span class="font-semibold text-vibe-tertiary">− <?= formatRupiah($totalBelanja) ?></span>
                 </div>
-                <div class="border-t border-vibe-outline-variant pt-2.5 flex items-center justify-between">
+                <div class="border-t border-vibe-outline-variant pt-3 flex items-center justify-between">
                     <span class="text-sm font-bold text-vibe-on-surface">Laba Kotor</span>
-                    <span class="font-black text-lg <?= $labaKotor >= 0 ? 'text-vibe-on-surface' : 'text-vibe-error' ?>"><?= formatRupiah($labaKotor) ?></span>
+                    <div class="flex items-center gap-1.5 <?= $labaKotor >= 0 ? 'text-vibe-secondary' : 'text-vibe-error' ?>">
+                        <?php if ($labaKotor >= 0): ?>
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        <?php else: ?>
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
+                        <?php endif; ?>
+                        <span class="font-black text-lg sm:text-xl"><?= formatRupiah($labaKotor) ?></span>
+                    </div>
                 </div>
             </div>
             <p class="text-[11px] text-vibe-on-surface-variant leading-relaxed lg:hidden mt-2">
@@ -503,7 +510,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <td class="px-5 py-4 text-right text-sm font-black text-vibe-on-surface"><?= formatRupiah($m['laba']) ?></td>
                         <td class="px-5 py-4">
                             <div class="flex items-center gap-2.5">
-                                <div class="flex-1 h-2 rounded-full bg-vibe-surface-container overflow-hidden max-w-[140px]">
+                                <div class="flex-1 h-2.5 rounded-full bg-vibe-surface-container overflow-hidden max-w-[140px]">
                                     <div class="h-full rounded-full <?= $m['margin'] >= 60 ? 'bg-vibe-secondary' : ($m['margin'] >= 30 ? 'bg-vibe-accent' : 'bg-vibe-error') ?>"
                                          style="width:<?= max(4, min(100, $m['margin'])) ?>%"></div>
                                 </div>
@@ -529,7 +536,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <div class="text-[11px] text-vibe-on-surface-variant">Laba: <span class="font-bold text-vibe-on-surface"><?= formatRupiah($m['laba']) ?></span></div>
                     </div>
                     <div class="flex items-center gap-2.5">
-                        <div class="flex-1 h-1.5 rounded-full bg-vibe-surface-container overflow-hidden">
+                        <div class="flex-1 h-2.5 rounded-full bg-vibe-surface-container overflow-hidden">
                             <div class="h-full rounded-full <?= $m['margin'] >= 60 ? 'bg-vibe-secondary' : ($m['margin'] >= 30 ? 'bg-vibe-accent' : 'bg-vibe-error') ?>"
                                  style="width:<?= max(4, min(100, $m['margin'])) ?>%"></div>
                         </div>
