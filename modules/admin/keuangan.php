@@ -256,7 +256,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 </div>
                 <div>
                     <h1 class="text-2xl font-display font-bold text-vibe-on-surface tracking-tight">Administrasi Keuangan</h1>
-                    <p class="text-sm text-vibe-on-surface-variant mt-1">Catat pengeluaran bahan baku, atur anggaran bulanan, dan pantau harga modal menu.</p>
+                    <p class="text-sm text-vibe-on-surface-variant mt-1">Catat pengeluaran bahan baku dan pantau margin keuntungan menu.</p>
                 </div>
             </div>
         </div>
@@ -269,10 +269,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 </select>
                 <svg class="w-4 h-4 text-vibe-outline-variant absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </label>
-            <button @click="openBudget()" class="btn-press w-full lg:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-white border border-vibe-outline-variant/60 rounded-xl text-sm font-bold text-vibe-on-surface-variant hover:text-vibe-on-surface hover:bg-vibe-surface-dim hover:border-vibe-outline-variant transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                Anggaran
-            </button>
             <a href="<?= BASE_URL ?>/modules/admin/catat-pengeluaran.php" class="btn-press w-full lg:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-vibe-primary text-white rounded-xl text-sm font-bold hover:bg-vibe-primary-container transition-colors shadow-sm shadow-vibe-primary/20">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                 Catat Pengeluaran
@@ -281,7 +277,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
     <!-- KPI strip -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-8">
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-8">
         <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-colors hover:border-vibe-on-surface/30 group">
             <div>
                 <div class="text-[9px] sm:text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80 leading-tight">Total Pengeluaran</div>
@@ -291,114 +287,43 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         </div>
         <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-colors hover:border-vibe-on-surface/30 group">
             <div>
-                <div class="text-[9px] sm:text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80 leading-tight">Pemakaian Anggaran</div>
-                <div class="text-xl sm:text-2xl font-black mt-1.5 <?= $sisaBudget < 0 ? 'text-vibe-error' : 'text-vibe-on-surface group-hover:text-vibe-primary transition-colors' ?>">
-                    <?= $budget > 0 ? $pctBudget . '%' : '—' ?>
-                </div>
-            </div>
-            <div class="text-[10px] sm:text-xs font-semibold mt-3 sm:mt-4 <?= $sisaBudget < 0 ? 'text-vibe-error bg-vibe-error/10 px-2 py-1 rounded-md inline-block w-fit' : 'text-vibe-on-surface-variant opacity-70' ?>">
-                Sisa <?= formatRupiah($sisaBudget) ?>
-            </div>
-        </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-colors hover:border-vibe-on-surface/30 group">
-            <div>
                 <div class="text-[9px] sm:text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80 leading-tight">Rata Harian</div>
                 <div class="text-xl sm:text-2xl font-black text-vibe-on-surface mt-1.5 group-hover:text-vibe-primary transition-colors"><?= formatRupiah($rataHari) ?></div>
             </div>
             <div class="text-[10px] sm:text-xs font-semibold text-vibe-on-surface-variant mt-3 sm:mt-4 opacity-70"><?= $hariAcuan ?> hari operasional</div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-colors hover:border-vibe-on-surface/30 group">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-colors hover:border-vibe-on-surface/30 group col-span-2 lg:col-span-1">
             <div>
                 <div class="text-[9px] sm:text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80 leading-tight">Biaya Bahan Terpakai</div>
                 <div class="text-xl sm:text-2xl font-black text-vibe-accent mt-1.5 group-hover:text-vibe-primary transition-colors"><?= formatRupiah($cogsBulan) ?></div>
             </div>
-            <div class="text-[10px] sm:text-xs font-semibold text-vibe-on-surface-variant mt-3 sm:mt-4 opacity-70">Estimasi HPP</div>
+            <div class="text-[10px] sm:text-xs font-semibold text-vibe-on-surface-variant mt-3 sm:mt-4 opacity-70">Estimasi Modal Bahan</div>
         </div>
     </div>
 
-    <!-- Budget Pulse (signature) + Posisi Laba -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        <!-- Budget Pulse -->
-        <div class="lg:col-span-2 bg-white border border-vibe-outline-variant/60 rounded-2xl p-6 animate-fade-up">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h3 class="font-display text-lg font-bold text-vibe-on-surface">Pantauan Anggaran</h3>
-                    <p class="text-xs text-vibe-on-surface-variant mt-1">Perbandingan total pengeluaran dengan batas anggaran bulan ini</p>
-                </div>
-                <div class="text-right">
-                    <div class="text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider">Batas Anggaran</div>
-                    <div class="font-bold text-vibe-on-surface"><?= $budget > 0 ? formatRupiah($budget) : 'Belum diatur' ?></div>
-                </div>
+    <!-- Posisi Laba -->
+    <div class="bg-white border border-vibe-outline-variant/60 rounded-2xl p-6 animate-fade-up mt-8" style="animation-delay:.1s">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div>
+                <h3 class="font-display text-lg font-bold text-vibe-on-surface mb-1">Keuntungan Sementara</h3>
+                <p class="text-xs text-vibe-on-surface-variant mb-4"><?= $periodeLabel ?></p>
+                <p class="text-[11px] text-vibe-on-surface-variant max-w-sm leading-relaxed hidden lg:block">
+                    <?= $labaKotor >= 0
+                        ? 'Pendapatan saat ini sudah berhasil menutupi modal bahan baku dan pengeluaran lainnya.'
+                        : 'Pengeluaran masih lebih besar daripada pemasukan (wajar jika sedang masa awal pembukaan).' ?>
+                </p>
             </div>
-
-            <?php if ($budget <= 0): ?>
-                <div class="flex items-center gap-3 bg-vibe-surface-dim rounded-lg px-4 py-3.5">
-                    <svg class="w-5 h-5 text-vibe-on-surface-variant shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <p class="text-sm text-vibe-on-surface-variant">Atur pagu anggaran bulan ini untuk memantau realisasi belanja. Tekan tombol <span class="font-semibold text-vibe-on-surface">Anggaran</span>.</p>
-                </div>
-            <?php else: ?>
-                <?php
-                    $wPem = $budget > 0 ? min(100, $cat['pembukaan'] / $budget * 100) : 0;
-                    $wOpe = $budget > 0 ? min(100, $cat['operasional'] / $budget * 100) : 0;
-                    $wLain = $budget > 0 ? min(100, $cat['lainnya'] / $budget * 100) : 0;
-                    $over = $totalBelanja > $budget;
-                ?>
-                <div class="relative h-4 rounded-full bg-vibe-surface-container overflow-hidden flex">
-                    <div class="h-full bg-vibe-secondary transition-all duration-700 ease-out" style="width:<?= $wPem ?>%" title="Pembukaan"></div>
-                    <div class="h-full bg-vibe-accent transition-all duration-700 ease-out" style="width:<?= $wOpe ?>%" title="Operasional"></div>
-                    <div class="h-full bg-vibe-tertiary transition-all duration-700 ease-out" style="width:<?= $wLain ?>%" title="Lainnya"></div>
-                </div>
-                <div class="flex items-center justify-between mt-2">
-                    <div class="text-xs text-vibe-on-surface-variant">
-                        Terpakai <span class="font-bold text-vibe-on-surface"><?= formatRupiah($totalBelanja) ?></span>
-                        <?php if ($over): ?>
-                            <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded bg-vibe-error-container text-vibe-error text-[10px] font-bold">Lewat pagu</span>
-                        <?php endif; ?>
-                    </div>
-                    <div class="text-xs font-bold <?= $over ? 'text-vibe-error' : 'text-vibe-on-surface' ?>"><?= $pctBudget ?>%</div>
-                </div>
-                <!-- Legend -->
-                <div class="grid grid-cols-3 gap-2 mt-4">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-sm bg-vibe-secondary shrink-0"></span>
-                        <div class="min-w-0">
-                            <div class="text-[11px] text-vibe-on-surface-variant truncate">Pembukaan</div>
-                            <div class="text-sm font-bold text-vibe-on-surface"><?= formatRupiah($cat['pembukaan']) ?></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-sm bg-vibe-accent shrink-0"></span>
-                        <div class="min-w-0">
-                            <div class="text-[11px] text-vibe-on-surface-variant truncate">Operasional</div>
-                            <div class="text-sm font-bold text-vibe-on-surface"><?= formatRupiah($cat['operasional']) ?></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-sm bg-vibe-tertiary shrink-0"></span>
-                        <div class="min-w-0">
-                            <div class="text-[11px] text-vibe-on-surface-variant truncate">Lainnya</div>
-                            <div class="text-sm font-bold text-vibe-on-surface"><?= formatRupiah($cat['lainnya']) ?></div>
-                        </div>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Posisi Laba -->
-        <div class="bg-white border border-vibe-outline-variant/60 rounded-2xl p-6 animate-fade-up" style="animation-delay:.1s">
-            <h3 class="font-display text-lg font-bold text-vibe-on-surface mb-1">Keuntungan Sementara</h3>
-            <p class="text-xs text-vibe-on-surface-variant mb-6"><?= $periodeLabel ?></p>
-            <div class="space-y-2.5">
+            <div class="w-full lg:w-96 space-y-2.5">
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-vibe-on-surface-variant">Omzet</span>
                     <span class="font-bold text-vibe-secondary"><?= formatRupiah($omzet) ?></span>
                 </div>
                 <div class="flex items-center justify-between">
-                    <span class="text-sm text-vibe-on-surface-variant">HPP terpakai</span>
+                    <span class="text-sm text-vibe-on-surface-variant">Modal bahan terpakai</span>
                     <span class="font-semibold text-vibe-accent">− <?= formatRupiah($cogsBulan) ?></span>
                 </div>
                 <div class="flex items-center justify-between">
-                    <span class="text-sm text-vibe-on-surface-variant">Belanja bahan</span>
+                    <span class="text-sm text-vibe-on-surface-variant">Pengeluaran kasir</span>
                     <span class="font-semibold text-vibe-tertiary">− <?= formatRupiah($totalBelanja) ?></span>
                 </div>
                 <div class="border-t border-vibe-outline-variant pt-2.5 flex items-center justify-between">
@@ -406,7 +331,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     <span class="font-black text-lg <?= $labaKotor >= 0 ? 'text-vibe-on-surface' : 'text-vibe-error' ?>"><?= formatRupiah($labaKotor) ?></span>
                 </div>
             </div>
-            <p class="text-[11px] text-vibe-on-surface-variant mt-4 leading-relaxed">
+            <p class="text-[11px] text-vibe-on-surface-variant leading-relaxed lg:hidden mt-2">
                 <?= $labaKotor >= 0
                     ? 'Pendapatan saat ini sudah berhasil menutupi modal bahan baku dan pengeluaran lainnya.'
                     : 'Pengeluaran masih lebih besar daripada pemasukan (wajar jika sedang masa awal pembukaan).' ?>
@@ -686,24 +611,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 </div>
 
-<!-- ============ MODAL: ANGGARAN ============ -->
-<div x-show="showBudgetModal" @keydown.escape.window="showBudgetModal=false" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-vibe-surface-dim/80 backdrop-blur-sm" x-transition.opacity.duration.200ms style="display:none">
-    <div @click.stop class="bg-white rounded-2xl w-full max-w-sm border border-vibe-outline-variant/50 p-7 shadow-2xl"
-         x-show="showBudgetModal" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-4">
-        <h3 class="text-lg font-display font-bold text-vibe-on-surface mb-1">Atur Anggaran Bulanan</h3>
-        <p class="text-xs text-vibe-on-surface-variant mb-5" x-text="'Batas pengeluaran untuk ' + periodeLabel"></p>
-        <label class="block text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-1.5">Batas Anggaran (Rp)</label>
-        <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-vibe-on-surface-variant">Rp</span>
-            <input type="number" step="1" min="0" x-model="budgetNominal" class="w-full pl-9 pr-4 py-3 bg-white border border-vibe-outline-variant rounded-lg focus:outline-none focus:border-vibe-on-surface text-sm transition-colors">
-        </div>
-        <div class="flex gap-3 mt-8">
-            <button type="button" @click="showBudgetModal=false" class="btn-press flex-1 py-3 rounded-xl border border-vibe-outline-variant/60 text-vibe-on-surface-variant font-bold text-sm hover:text-vibe-on-surface hover:bg-vibe-surface-dim transition-colors">Batal</button>
-            <button type="button" @click="submitBudget()" :disabled="savingBudget" class="btn-press flex-1 py-3 rounded-xl bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors disabled:opacity-60 shadow-sm shadow-vibe-primary/20" x-text="savingBudget ? 'Menyimpan…' : 'Simpan'"></button>
-        </div>
-    </div>
-</div>
-
     </div> <?php /* close x-data="keuanganApp()" */ ?>
     <?php endif; ?>
 </div>
@@ -714,7 +621,6 @@ document.addEventListener('alpine:init', () => {
         periode: '<?= $periode ?>',
         periodeLabel: '<?= $periodeLabel ?>',
         search: '',
-        savingBudget: false,
 
         expenses: <?= json_encode($expenses, JSON_UNESCAPED_SLASHES) ?>,
         budgetNominal: <?= (int)$budget ?>,
@@ -774,27 +680,6 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        // ---- Budget ----
-        openBudget() { this.showBudgetModal = true; },
-        async submitBudget() {
-            this.savingBudget = true;
-            try {
-                const fd = new FormData();
-                fd.append('csrf_token', '<?= generateCsrfToken() ?>');
-                fd.append('action', 'set_budget');
-                fd.append('periode', this.periode);
-                fd.append('nominal', this.budgetNominal || 0);
-                const res = await fetch('proses_pengeluaran.php', { method: 'POST', body: fd });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.message);
-                Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1300, showConfirmButton: false });
-                setTimeout(() => window.location.reload(), 600);
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: err.message });
-            } finally {
-                this.savingBudget = false;
-            }
-        },
     }));
 });
 </script>
