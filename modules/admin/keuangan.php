@@ -245,15 +245,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     scrollbar-width: none;
 }
 
-@media (min-width: 1024px) {
-    .kpi-grid-responsive {
-        display: grid !important;
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    }
-    .kpi-card-responsive {
-        width: 100% !important;
-    }
-}
 </style>
 
     <!-- Header -->
@@ -290,38 +281,38 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     </div>
 
     <!-- KPI strip -->
-    <div class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory kpi-grid-responsive gap-4 pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 lg:pb-0 mt-8">
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-8">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-colors hover:border-vibe-on-surface/30 group">
             <div>
-                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total Pengeluaran</div>
-                <div class="text-2xl font-black text-vibe-on-surface mt-1.5"><?= formatRupiah($totalBelanja) ?></div>
+                <div class="text-[9px] sm:text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80 leading-tight">Total Pengeluaran</div>
+                <div class="text-xl sm:text-2xl font-black text-vibe-on-surface mt-1.5 group-hover:text-vibe-primary transition-colors"><?= formatRupiah($totalBelanja) ?></div>
             </div>
-            <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70"><?= count($expenses) ?> transaksi · <?= $periodeLabel ?></div>
+            <div class="text-[10px] sm:text-xs font-semibold text-vibe-on-surface-variant mt-3 sm:mt-4 opacity-70"><?= count($expenses) ?> transaksi</div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-colors hover:border-vibe-on-surface/30 group">
             <div>
-                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Pemakaian Anggaran</div>
-                <div class="text-2xl font-black mt-1.5 <?= $sisaBudget < 0 ? 'text-vibe-error' : 'text-vibe-on-surface' ?>">
+                <div class="text-[9px] sm:text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80 leading-tight">Pemakaian Anggaran</div>
+                <div class="text-xl sm:text-2xl font-black mt-1.5 <?= $sisaBudget < 0 ? 'text-vibe-error' : 'text-vibe-on-surface group-hover:text-vibe-primary transition-colors' ?>">
                     <?= $budget > 0 ? $pctBudget . '%' : '—' ?>
                 </div>
             </div>
-            <div class="text-xs font-semibold mt-4 <?= $sisaBudget < 0 ? 'text-vibe-error bg-vibe-error/10 px-2 py-1 rounded-md inline-block w-fit' : 'text-vibe-on-surface-variant opacity-70' ?>">
+            <div class="text-[10px] sm:text-xs font-semibold mt-3 sm:mt-4 <?= $sisaBudget < 0 ? 'text-vibe-error bg-vibe-error/10 px-2 py-1 rounded-md inline-block w-fit' : 'text-vibe-on-surface-variant opacity-70' ?>">
                 Sisa <?= formatRupiah($sisaBudget) ?>
             </div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-colors hover:border-vibe-on-surface/30 group">
             <div>
-                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Rata-rata Pengeluaran Harian</div>
-                <div class="text-2xl font-black text-vibe-on-surface mt-1.5"><?= formatRupiah($rataHari) ?></div>
+                <div class="text-[9px] sm:text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80 leading-tight">Rata Harian</div>
+                <div class="text-xl sm:text-2xl font-black text-vibe-on-surface mt-1.5 group-hover:text-vibe-primary transition-colors"><?= formatRupiah($rataHari) ?></div>
             </div>
-            <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70">Dihitung berdasarkan <?= $hariAcuan ?> hari buka</div>
+            <div class="text-[10px] sm:text-xs font-semibold text-vibe-on-surface-variant mt-3 sm:mt-4 opacity-70"><?= $hariAcuan ?> hari operasional</div>
         </div>
-        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-6 shrink-0 w-[280px] kpi-card-responsive snap-center flex flex-col justify-between">
+        <div class="bg-white border border-vibe-outline-variant/50 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-colors hover:border-vibe-on-surface/30 group">
             <div>
-                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80">Total Modal Bahan (HPP)</div>
-                <div class="text-2xl font-black text-vibe-accent mt-1.5"><?= formatRupiah($cogsBulan) ?></div>
+                <div class="text-[9px] sm:text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest opacity-80 leading-tight">Biaya Bahan Terpakai</div>
+                <div class="text-xl sm:text-2xl font-black text-vibe-accent mt-1.5 group-hover:text-vibe-primary transition-colors"><?= formatRupiah($cogsBulan) ?></div>
             </div>
-            <div class="text-xs font-semibold text-vibe-on-surface-variant mt-4 opacity-70">Biaya bahan mentah terpakai</div>
+            <div class="text-[10px] sm:text-xs font-semibold text-vibe-on-surface-variant mt-3 sm:mt-4 opacity-70">Estimasi HPP</div>
         </div>
     </div>
 
@@ -438,7 +429,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto hidden sm:block">
             <table class="w-full">
                 <thead>
                     <tr class="text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-widest border-b border-vibe-outline-variant bg-vibe-surface-dim">
@@ -451,7 +442,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-vibe-outline/50">
-                    <template x-for="e in filteredExpenses()" :key="e.id">
+                    <template x-for="e in paginatedExpenses" :key="e.id">
                         <tr class="hover:bg-vibe-surface-dim transition-colors group">
                             <td class="px-5 py-4 text-sm text-vibe-on-surface-variant group-hover:text-vibe-on-surface transition-colors" x-text="e.tanggal"></td>
                             <td class="px-5 py-4">
@@ -494,11 +485,70 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             </td>
                         </tr>
                     </template>
-                    <tr x-show="filteredExpenses().length === 0">
-                        <td colspan="6" class="px-5 py-12 text-center text-sm text-vibe-on-surface-variant">Belum ada pengeluaran tercatat untuk periode ini.</td>
-                    </tr>
+                    </template>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Mobile Card List for Riwayat Pengeluaran -->
+        <div class="sm:hidden flex flex-col divide-y divide-vibe-outline-variant/50">
+            <template x-for="e in paginatedExpenses" :key="e.id">
+                <div class="p-4 flex flex-col gap-3 hover:bg-vibe-surface-dim transition-colors">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="font-bold text-sm text-vibe-on-surface" x-text="e.supplier || 'Tanpa Supplier'"></div>
+                            <div class="text-[11px] text-vibe-on-surface-variant mt-0.5" x-text="e.tanggal"></div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-black text-sm text-vibe-on-surface" x-text="fmt(e.total)"></div>
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold border mt-1"
+                                :class="{
+                                    'bg-vibe-secondary/10 text-vibe-secondary border-vibe-secondary/20': e.kategori==='pembukaan',
+                                    'bg-vibe-accent/10 text-vibe-accent border-vibe-accent/20': e.kategori==='operasional',
+                                    'bg-vibe-tertiary/10 text-vibe-tertiary border-vibe-tertiary/20': e.kategori==='lainnya'
+                                }"
+                                x-text="e.kategori === 'pembukaan' ? 'Pembukaan' : (e.kategori === 'operasional' ? 'Operasional' : 'Lainnya')"></span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-1">
+                        <div class="text-[10px] font-medium text-vibe-on-surface-variant flex items-center gap-1.5">
+                            <span class="capitalize" x-text="e.metode_bayar"></span>
+                            <span>·</span>
+                            <span x-text="(e.items ? e.items.length : 0) + ' item'"></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="showDetail(e)" class="p-1.5 text-vibe-on-surface-variant hover:text-vibe-on-surface bg-white border border-vibe-outline-variant/60 rounded-md shadow-sm btn-press">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </button>
+                            <a :href="'<?= BASE_URL ?>/modules/admin/catat-pengeluaran.php?id=' + e.id" class="p-1.5 text-vibe-on-surface-variant hover:text-vibe-on-surface bg-white border border-vibe-outline-variant/60 rounded-md shadow-sm btn-press">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </a>
+                            <button @click="confirmDelete(e)" class="p-1.5 text-vibe-on-surface-variant hover:text-vibe-error bg-white border border-vibe-outline-variant/60 rounded-md shadow-sm btn-press">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Empty State & Pagination -->
+        <div x-show="filteredExpenses().length === 0" class="p-10 sm:p-12 text-center flex flex-col items-center justify-center">
+            <div class="w-16 h-16 bg-vibe-surface-dim rounded-full flex items-center justify-center text-vibe-on-surface-variant mb-4">
+                <svg class="w-8 h-8 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <h4 class="text-base font-bold text-vibe-on-surface mb-1">Belum ada catatan</h4>
+            <p class="text-xs text-vibe-on-surface-variant max-w-[250px] mx-auto mb-5">Catat semua pengeluaran operasional Anda agar mudah dilacak.</p>
+            <a href="<?= BASE_URL ?>/modules/admin/catat-pengeluaran.php" class="inline-flex items-center gap-2 px-5 py-2.5 bg-vibe-primary text-white text-sm font-bold rounded-xl hover:bg-vibe-primary-container transition-colors shadow-sm btn-press">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Catat Sekarang
+            </a>
+        </div>
+        
+        <div x-show="filteredExpenses().length > 10 && !showAllExpenses" class="p-4 border-t border-vibe-outline-variant/50 text-center bg-vibe-surface-dim/30">
+            <button @click="showAllExpenses = true" class="text-sm font-bold text-vibe-primary hover:text-vibe-primary-container transition-colors btn-press inline-block py-1">
+                Tampilkan semua (<span x-text="filteredExpenses().length"></span>)
+            </button>
         </div>
     </div>
 
@@ -508,13 +558,13 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             <h3 class="font-display text-lg font-bold text-vibe-on-surface">Keuntungan per Menu</h3>
             <p class="text-xs text-vibe-on-surface-variant mt-1">Perbandingan antara harga modal bahan dengan harga jual menu</p>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto hidden sm:block">
             <table class="w-full">
                 <thead>
                     <tr class="text-[11px] font-bold text-vibe-on-surface-variant uppercase tracking-widest border-b border-vibe-outline-variant bg-vibe-surface-dim">
                         <th class="px-5 py-4 text-left">Menu</th>
                         <th class="px-5 py-4 text-right">Harga Jual</th>
-                        <th class="px-5 py-4 text-right">HPP</th>
+                        <th class="px-5 py-4 text-right" title="Harga Pokok Penjualan (Modal Bahan)">Modal Bahan</th>
                         <th class="px-5 py-4 text-right">Laba</th>
                         <th class="px-5 py-4 text-left">Margin</th>
                     </tr>
@@ -537,11 +587,35 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if (empty($menuHpp)): ?>
-                    <tr><td colspan="5" class="px-5 py-12 text-center text-sm text-vibe-on-surface-variant">Belum ada menu.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Mobile Card Grid for Menu Keuntungan -->
+        <div class="sm:hidden grid grid-cols-1 gap-3 p-4 bg-vibe-surface-dim/30">
+            <?php foreach ($menuHpp as $m): ?>
+                <div class="bg-white border border-vibe-outline-variant/60 rounded-xl p-4 shadow-sm hover:border-vibe-on-surface/30 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="font-bold text-sm text-vibe-on-surface truncate pr-2"><?= htmlspecialchars($m['nama_menu']) ?></div>
+                        <div class="font-black text-sm text-vibe-on-surface shrink-0"><?= formatRupiah($m['harga']) ?></div>
+                    </div>
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="text-[11px] text-vibe-on-surface-variant">Modal: <span class="font-bold text-vibe-accent"><?= formatRupiah($m['hpp']) ?></span></div>
+                        <div class="text-[11px] text-vibe-on-surface-variant">Laba: <span class="font-bold text-vibe-on-surface"><?= formatRupiah($m['laba']) ?></span></div>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex-1 h-1.5 rounded-full bg-vibe-surface-container overflow-hidden">
+                            <div class="h-full rounded-full <?= $m['margin'] >= 60 ? 'bg-vibe-secondary' : ($m['margin'] >= 30 ? 'bg-vibe-accent' : 'bg-vibe-error') ?>"
+                                 style="width:<?= max(4, min(100, $m['margin'])) ?>%"></div>
+                        </div>
+                        <span class="text-[10px] font-bold <?= $m['margin'] >= 60 ? 'text-vibe-secondary' : ($m['margin'] >= 30 ? 'text-vibe-accent' : 'text-vibe-error') ?> w-9 text-right"><?= $m['margin'] ?>%</span>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            <?php if (empty($menuHpp)): ?>
+                <div class="p-8 text-center text-sm text-vibe-on-surface-variant">Belum ada menu.</div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -664,6 +738,12 @@ document.addEventListener('alpine:init', () => {
                 (e.supplier || '').toLowerCase().includes(q) ||
                 (e.keterangan || '').toLowerCase().includes(q)
             );
+        },
+
+        showAllExpenses: false,
+        get paginatedExpenses() {
+            const arr = this.filteredExpenses();
+            return this.showAllExpenses ? arr : arr.slice(0, 10);
         },
 
 
