@@ -417,7 +417,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             </td>
                         </tr>
                     </template>
-                    </template>
                 </tbody>
             </table>
         </div>
