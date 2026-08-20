@@ -374,7 +374,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-vibe-outline/50">
-                    <template x-for="e in paginatedExpenses" :key="e.id">
+                    <template x-for="e in paginatedExpenses" :key="'desktop-' + e.id">
                         <tr class="hover:bg-vibe-surface-dim transition-colors group">
                             <td class="px-5 py-4 text-sm text-vibe-on-surface-variant group-hover:text-vibe-on-surface transition-colors" x-text="e.tanggal"></td>
                             <td class="px-5 py-4">
@@ -423,7 +423,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
         <!-- Mobile Card List for Riwayat Pengeluaran -->
         <div class="sm:hidden flex flex-col divide-y divide-vibe-outline-variant/50">
-            <template x-for="e in paginatedExpenses" :key="e.id">
+            <template x-for="e in paginatedExpenses" :key="'mobile-' + e.id">
                 <div class="p-4 flex flex-col gap-3 hover:bg-vibe-surface-dim transition-colors">
                     <div class="flex items-start justify-between">
                         <div>
