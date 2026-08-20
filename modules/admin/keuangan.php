@@ -214,7 +214,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
         </div>
     <?php else: ?>
-        <div x-data="keuanganApp()" class="w-full">
+        <div x-data="keuanganApp()" class="w-full pb-8 lg:pb-12">
 
 <style>
 /* Micro-interactions & Emil Kowalski Animations */
@@ -564,38 +564,38 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <div class="flex-1 overflow-y-auto min-h-0 px-6 py-5 space-y-4">
+        <div class="flex-1 overflow-y-auto min-h-0 px-6 py-5 space-y-6">
             <div class="grid grid-cols-3 gap-3">
-                <div class="bg-vibe-surface-dim rounded-lg p-3 text-center">
-                    <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-wider">Metode</div>
+                <div class="bg-vibe-surface-dim/50 border border-vibe-outline-variant/40 rounded-xl p-3 text-center">
+                    <div class="text-[9px] font-bold text-vibe-on-surface-variant uppercase tracking-widest">Metode</div>
                     <div class="text-sm font-bold text-vibe-on-surface mt-1 capitalize" x-text="detail?.metode_bayar"></div>
                 </div>
-                <div class="bg-vibe-surface-dim rounded-lg p-3 text-center">
-                    <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-wider">Input</div>
+                <div class="bg-vibe-surface-dim/50 border border-vibe-outline-variant/40 rounded-xl p-3 text-center">
+                    <div class="text-[9px] font-bold text-vibe-on-surface-variant uppercase tracking-widest">Input</div>
                     <div class="text-sm font-bold text-vibe-on-surface mt-1 truncate" x-text="detail?.input_nama || 'admin'"></div>
                 </div>
-                <div class="bg-vibe-surface-dim rounded-lg p-3 text-center">
-                    <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-wider">Total</div>
-                    <div class="text-sm font-bold text-vibe-primary mt-1" x-text="fmt(detail?.total)"></div>
+                <div class="bg-vibe-surface-dim/50 border border-vibe-outline-variant/40 rounded-xl p-3 text-center">
+                    <div class="text-[9px] font-bold text-vibe-on-surface-variant uppercase tracking-widest">Total</div>
+                    <div class="text-sm font-black text-vibe-primary mt-1" x-text="fmt(detail?.total)"></div>
                 </div>
             </div>
 
             <div>
-                <div class="text-xs font-bold text-vibe-on-surface-variant uppercase tracking-wider mb-2">Rincian Item</div>
-                <div class="space-y-1.5">
+                <div class="text-[10px] font-bold text-vibe-on-surface-variant uppercase tracking-widest mb-3">Rincian Item</div>
+                <div class="divide-y divide-vibe-outline-variant/30 border-y border-vibe-outline-variant/30">
                     <template x-for="(it, i) in (detail?.items || [])" :key="i">
-                        <div class="flex items-center justify-between bg-white border border-vibe-outline-variant rounded-lg px-3.5 py-2.5">
-                            <div class="min-w-0 flex-1">
-                                <div class="text-sm font-semibold text-vibe-on-surface truncate" x-text="it.nama_bahan"></div>
-                                <div class="text-[11px] text-vibe-on-surface-variant">
+                        <div class="flex items-center justify-between py-3">
+                            <div class="min-w-0 flex-1 pr-4">
+                                <div class="text-sm font-bold text-vibe-on-surface truncate" x-text="it.nama_bahan"></div>
+                                <div class="text-[11px] text-vibe-on-surface-variant mt-0.5">
                                     <span x-text="it.qty_beli"></span> <span x-text="it.satuan_beli"></span>
                                     <template x-if="it.konversi && it.konversi != 1">
-                                        <span> (Masuk gudang: <span x-text="it.qty"></span> <span x-text="it.satuan"></span>)</span>
+                                        <span> (Masuk: <span x-text="it.qty"></span> <span x-text="it.satuan"></span>)</span>
                                     </template>
                                     × Rp <span x-text="Number(it.harga_satuan).toLocaleString('id-ID')"></span>
                                 </div>
                             </div>
-                            <div class="text-right shrink-0 ml-3 font-bold text-sm text-vibe-on-surface" x-text="fmt(it.subtotal)"></div>
+                            <div class="text-right shrink-0 font-black text-sm text-vibe-on-surface" x-text="fmt(it.subtotal)"></div>
                         </div>
                     </template>
                 </div>
@@ -613,7 +613,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         </div>
         <div class="px-6 py-5 border-t border-vibe-outline-variant/50 flex gap-3 shrink-0">
             <button type="button" @click="showDetailModal=false" class="btn-press flex-1 py-3 rounded-xl border border-vibe-outline-variant/60 text-vibe-on-surface-variant font-bold text-sm hover:text-vibe-on-surface hover:bg-vibe-surface-dim transition-colors">Tutup</button>
-            <button type="button" @click="openEdit(detail); showDetailModal=false" class="btn-press flex-1 py-3 rounded-xl bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors shadow-sm shadow-vibe-primary/20">Ubah</button>
+            <a :href="'<?= BASE_URL ?>/modules/admin/catat-pengeluaran.php?id=' + detail?.id" class="btn-press flex-1 py-3 rounded-xl bg-vibe-primary text-white font-bold text-sm hover:bg-vibe-primary-container transition-colors shadow-sm shadow-vibe-primary/20 text-center flex items-center justify-center">Ubah</a>
         </div>
     </div>
 </div>
@@ -680,8 +680,9 @@ document.addEventListener('alpine:init', () => {
                 const res = await fetch('proses_pengeluaran.php', { method: 'POST', body: fd });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message);
-                Swal.fire({ icon: 'success', title: 'Dihapus', timer: 1300, showConfirmButton: false });
-                setTimeout(() => window.location.reload(), 600);
+                Swal.fire({ icon: 'success', title: 'Dihapus', timer: 1300, showConfirmButton: false }).then(() => {
+                    window.location.reload();
+                });
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'Gagal', text: err.message });
             }
