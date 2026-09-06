@@ -4,6 +4,21 @@
  * Koneksi PDO ke MySQL
  */
 
+// ==========================================
+// SUSPENSION LOCK (UNPAID INVOICE)
+// Hapus atau comment kode die() di bawah ini untuk menyalakan sistem kembali.
+// ==========================================
+die("
+<div style='display:flex; justify-content:center; items-align:center; height:100vh; background-color:#f8f9fa; font-family:sans-serif;'>
+    <div style='text-align:center; margin-top:15%; padding:40px; background:white; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1); border-top:5px solid #dc3545; max-height: 250px;'>
+        <h1 style='color:#343a40; margin-bottom:10px;'>SISTEM DITANGGUHKAN SEMENTARA</h1>
+        <p style='color:#6c757d; font-size:18px;'>Layanan ini dibekukan karena masalah administrasi (Unpaid Invoice).</p>
+        <p style='color:#6c757d; font-size:14px; margin-top:20px;'>Silakan hubungi Developer / Pihak IT untuk menyelesaikan pelunasan dan memulihkan akses.</p>
+    </div>
+</div>
+");
+// ==========================================
+
 // === PRODUCTION (AlwaysData) ===
 // define('DB_HOST', 'mysql-dimsdevv.alwaysdata.net');
 // define('DB_NAME', 'dimsdevv_beanpay');
